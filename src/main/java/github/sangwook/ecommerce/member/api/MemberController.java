@@ -18,7 +18,7 @@ public class MemberController {
     private final MemberService memberService;
 
     @PostMapping("/join")
-    public ResponseEntity<?> join(@RequestBody MemberJoinRequest request) {
+    public ResponseEntity<Void> join(@RequestBody MemberJoinRequest request) {
         memberService.join(request.getEmail(), request.getPassword(), request.getName());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
