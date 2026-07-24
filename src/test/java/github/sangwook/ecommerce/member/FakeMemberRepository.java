@@ -2,6 +2,7 @@ package github.sangwook.ecommerce.member;
 
 import github.sangwook.ecommerce.member.application.MemberRepository;
 import github.sangwook.ecommerce.member.domain.Member;
+import java.util.Optional;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -28,6 +29,16 @@ public class FakeMemberRepository implements MemberRepository {
         injectId(member, ID_COUNTER.getAndIncrement());
         map.put(member.getId(), member);
         return member;
+    }
+
+    @Override
+    public Optional<Member> findByEmail(String email) {
+        for (Member value : map.values()) {
+            if (value.getEmail().equals(email)) {
+                return Optional.of(value);
+            }
+        }
+        return Optional.empty();
     }
 
     private void injectId(Member member, Long id) {
