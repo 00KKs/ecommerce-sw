@@ -1,7 +1,11 @@
 package github.sangwook.ecommerce.member.api;
 
+import github.sangwook.ecommerce.auth.MemberSession;
+import github.sangwook.ecommerce.auth.SessionKeys;
 import github.sangwook.ecommerce.member.api.dto.MemberJoinRequest;
+import github.sangwook.ecommerce.member.api.dto.MemberLoginRequest;
 import github.sangwook.ecommerce.member.application.MemberService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,5 +25,12 @@ public class MemberController {
     public ResponseEntity<Void> join(@RequestBody MemberJoinRequest request) {
         memberService.join(request.getEmail(), request.getPassword(), request.getName());
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Void> login(@RequestBody MemberLoginRequest request, HttpSession session) {
+        MemberSession memberSession = memberService.login(request.getEmail(), request.getPassword());
+        session.setAttribute(SessionKeys.LOGIN_MEMBER, memberSession);
+        return ResponseEntity.ok().build();
     }
 }
