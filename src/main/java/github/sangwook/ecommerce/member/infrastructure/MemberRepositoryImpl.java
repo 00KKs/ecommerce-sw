@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.member.infrastructure;
 
 import github.sangwook.ecommerce.member.application.MemberRepository;
+import github.sangwook.ecommerce.member.domain.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -9,4 +10,14 @@ import org.springframework.stereotype.Repository;
 public class MemberRepositoryImpl implements MemberRepository {
 
     private final MemberJpaRepository memberJpaRepository;
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return memberJpaRepository.existsByEmail(email);
+    }
+
+    @Override
+    public Member save(Member member) {
+        return memberJpaRepository.save(member);
+    }
 }
