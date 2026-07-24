@@ -1,0 +1,8 @@
+package github.sangwook.ecommerce.auth;
+
+public class UnAuthorizedException extends RuntimeException {
+
+    public UnAuthorizedException() {
+        super("로그인이 필요합니다.");
+    }
+}
