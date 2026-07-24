@@ -33,6 +33,26 @@ public class MemberServiceTest {
         }
     }
 
+    @Nested
+    class 로그인 {
+
+        @Test
+        void 로그인_시_이메일이_존재하지_않는_경우_로그인에_실패한다() {
+            fakeMemberRepository.save(new Member("ssw@test.com", "passwordHash", "sangwook"));
+            assertThatThrownBy(
+                () -> memberService.login("잘못된이메일", "passwordHash")
+            ).isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        void 로그인_시_비밀번호를_잘못_입력한_경우_로그인에_실패한다() {
+            fakeMemberRepository.save(new Member("ssw@test.com", "passwordHash", "sangwook"));
+            assertThatThrownBy(
+                () -> memberService.login("ssw@test.com", "잘못된비밀번호")
+            ).isInstanceOf(IllegalStateException.class);
+        }
+    }
+
 
 
 }
