@@ -5,6 +5,9 @@ import github.sangwook.ecommerce.auth.SessionKeys;
 import github.sangwook.ecommerce.member.api.dto.MemberJoinRequest;
 import github.sangwook.ecommerce.member.api.dto.MemberLoginRequest;
 import github.sangwook.ecommerce.member.application.MemberService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,6 +34,17 @@ public class MemberController {
     public ResponseEntity<Void> login(@RequestBody MemberLoginRequest request, HttpSession session) {
         MemberSession memberSession = memberService.login(request.getEmail(), request.getPassword());
         session.setAttribute(SessionKeys.LOGIN_MEMBER, memberSession);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        HttpSession session = request.getSession(false);
+        if (session != null) session.invalidate();
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
         return ResponseEntity.ok().build();
     }
 }
