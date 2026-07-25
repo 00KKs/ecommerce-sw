@@ -2,10 +2,10 @@ package github.sangwook.ecommerce.member.application;
 
 import github.sangwook.ecommerce.auth.MemberSession;
 import github.sangwook.ecommerce.member.domain.Member;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
