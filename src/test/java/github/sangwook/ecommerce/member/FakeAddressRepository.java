@@ -52,6 +52,16 @@ public class FakeAddressRepository implements AddressRepository {
         return addresses;
     }
 
+    @Override
+    public Optional<Address> findById(Long id) {
+        for (Address value : map.values()) {
+            if (value.getId().equals(id)) {
+                return Optional.of(value);
+            }
+        }
+        return Optional.empty();
+    }
+
     private void injectId(Address address, Long id) {
         ReflectionTestUtils.setField(address, "id", id);
     }

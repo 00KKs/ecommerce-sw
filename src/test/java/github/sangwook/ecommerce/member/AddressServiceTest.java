@@ -83,7 +83,11 @@ public class AddressServiceTest {
     class 배송지_수정 {
         @Test
         void 배송지_수정_시_회원_아이디가_다를_경우_예외가_발생한다() {
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
 
+            Address address = fakeAddressRepository.findAllByMemberId(1L).get(0);
+            assertThatThrownBy(() -> addressService.update(2L, address.getId(), "김철수", "010-3333-4444", "부산시", "경비실"))
+                .isInstanceOf(IllegalStateException.class);
         }
     }
 
