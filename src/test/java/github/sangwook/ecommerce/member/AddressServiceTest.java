@@ -143,17 +143,39 @@ public class AddressServiceTest {
 
         @Test
         void 기본_배송지를_변경할_배송지가_내_배송지가_아닌_경우_예외가_발생한다() {
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
+            Address addr = fakeAddressRepository.findAllByMemberId(1L).get(0);
 
+            assertThatThrownBy(() -> addressService.updateDefault(2L, addr.getId())).isInstanceOf(IllegalStateException.class);
         }
 
         @Test
         void 새_배송지를_기본으로_지정하면_이전_기본은_해제된다() {
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
+            addressService.create(1L, "김철수", "010-3333-4444", "부산시", "경비실", false);
+            Address kim = fakeAddressRepository.findAllByMemberId(1L).stream().filter(a -> a.getRecipientName().equals("김철수")).findFirst().get();
 
+            addressService.updateDefault(1L, kim.getId());
+
+            assertThat(fakeAddressRepository.findByMemberIdAndIsDefaultTrue(1L).get().getRecipientName()).isEqualTo("김철수");
+            assertThat(countDefaults(1L)).isEqualTo(1);
         }
 
         @Test
         void 기본_배송지를_다시_기본으로_지정해도_기본으로_유지된다() {
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
+            Address hong = fakeAddressRepository.findByMemberIdAndIsDefaultTrue(1L).get();
 
+            addressService.updateDefault(1L, hong.getId());
+
+            assertThat(fakeAddressRepository.findByMemberIdAndIsDefaultTrue(1L).get().getRecipientName()).isEqualTo("홍길동");
+            assertThat(countDefaults(1L)).isEqualTo(1);
+        }
+
+        private long countDefaults(Long memberId) {
+            return fakeAddressRepository.findAllByMemberId(memberId).stream()
+                .filter(Address::getIsDefault)
+                .count();
         }
     }
 
