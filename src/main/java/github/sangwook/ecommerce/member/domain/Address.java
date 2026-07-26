@@ -46,4 +46,12 @@ public class Address {
         this.address = address;
         this.isDefault = isDefault;
     }
+
+    public void setAsDefault() {
+        this.isDefault = true;
+    }
+
+    public void unSetDefault() {
+        this.isDefault = false;
+    }
 }
