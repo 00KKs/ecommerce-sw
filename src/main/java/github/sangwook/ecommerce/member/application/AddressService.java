@@ -49,7 +49,16 @@ public class AddressService {
         addressRepository.delete(address);
     }
 
+    @Transactional
+    public void updateDefault(Long memberId, Long addressId) {
+        Address address = addressRepository.findById(addressId).orElseThrow(() -> new IllegalStateException("배송지를 찾을 수 없습니다."));
+        if (!address.getMemberId().equals(memberId)) throw new IllegalStateException("권한이 없습니다.");
+        applyDefault(memberId, address);
+    }
+
     private void applyDefault(Long memberId, Address target) {
+        if (target.getIsDefault()) return;
+
         addressRepository.findByMemberIdAndIsDefaultTrue(memberId).ifPresent(
             address -> {
                 address.unSetDefault();

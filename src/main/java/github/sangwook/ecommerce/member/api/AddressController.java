@@ -5,6 +5,7 @@ import github.sangwook.ecommerce.auth.MemberSession;
 import github.sangwook.ecommerce.member.api.dto.AddressCreateRequest;
 import github.sangwook.ecommerce.member.api.dto.AddressDeleteRequest;
 import github.sangwook.ecommerce.member.api.dto.AddressResponse;
+import github.sangwook.ecommerce.member.api.dto.AddressUpdateDefaultRequest;
 import github.sangwook.ecommerce.member.api.dto.AddressUpdateRequest;
 import github.sangwook.ecommerce.member.application.AddressService;
 import java.util.List;
@@ -57,6 +58,12 @@ public class AddressController {
     @PostMapping("/delete")
     public ResponseEntity<Void> delete(@LoginMember MemberSession memberSession, @RequestBody AddressDeleteRequest request) {
         addressService.delete(memberSession.getId(), request.getAddressId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/default")
+    public ResponseEntity<Void> updateDefault(@LoginMember MemberSession memberSession, @RequestBody AddressUpdateDefaultRequest request) {
+        addressService.updateDefault(memberSession.getId(), request.getAddressId());
         return ResponseEntity.ok().build();
     }
 
