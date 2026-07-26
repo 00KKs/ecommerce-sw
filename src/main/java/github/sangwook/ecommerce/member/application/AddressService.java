@@ -1,6 +1,8 @@
 package github.sangwook.ecommerce.member.application;
 
+import github.sangwook.ecommerce.member.api.dto.AddressResponse;
 import github.sangwook.ecommerce.member.domain.Address;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,14 @@ public class AddressService {
         if (!address.getMemberId().equals(memberId)) throw new IllegalStateException("권한이 없습니다.");
         address.update(recipientName, recipientPhone, stringAddress, deliveryRequest);
         addressRepository.save(address);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AddressResponse> getList(Long memberId) {
+        return addressRepository.findAllByMemberId(memberId)
+            .stream()
+            .map(a -> new AddressResponse(a.getId(), a.getRecipientName(), a.getRecipientPhone(), a.getAddress(), a.getDeliveryRequest(), a.getIsDefault()))
+            .toList();
     }
 
     private void applyDefault(Long memberId, Address target) {
