@@ -37,4 +37,9 @@ public class AddressRepositoryImpl implements AddressRepository {
     public Optional<Address> findById(Long id) {
         return addressJpaRepository.findById(id);
     }
+
+    @Override
+    public void delete(Address address) {
+        addressJpaRepository.delete(address);
+    }
 }

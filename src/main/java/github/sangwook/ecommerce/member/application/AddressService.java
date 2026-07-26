@@ -41,6 +41,14 @@ public class AddressService {
             .toList();
     }
 
+    @Transactional
+    public void delete(Long memberId, Long addressId) {
+        Address address = addressRepository.findById(addressId).orElseThrow(() -> new IllegalStateException("배송지를 찾을 수 없습니다."));
+        if (!address.getMemberId().equals(memberId)) throw new IllegalStateException("권한이 없습니다.");
+        if (address.getIsDefault()) throw new IllegalStateException("기본 배송지는 삭제할 수 없습니다.");
+        addressRepository.delete(address);
+    }
+
     private void applyDefault(Long memberId, Address target) {
         addressRepository.findByMemberIdAndIsDefaultTrue(memberId).ifPresent(
             address -> {

@@ -3,6 +3,7 @@ package github.sangwook.ecommerce.member.api;
 import github.sangwook.ecommerce.auth.LoginMember;
 import github.sangwook.ecommerce.auth.MemberSession;
 import github.sangwook.ecommerce.member.api.dto.AddressCreateRequest;
+import github.sangwook.ecommerce.member.api.dto.AddressDeleteRequest;
 import github.sangwook.ecommerce.member.api.dto.AddressResponse;
 import github.sangwook.ecommerce.member.api.dto.AddressUpdateRequest;
 import github.sangwook.ecommerce.member.application.AddressService;
@@ -51,6 +52,12 @@ public class AddressController {
     @GetMapping
     public ResponseEntity<List<AddressResponse>> getList(@LoginMember MemberSession memberSession) {
         return ResponseEntity.ok(addressService.getList(memberSession.getId()));
+    }
+
+    @PostMapping("/delete")
+    public ResponseEntity<Void> delete(@LoginMember MemberSession memberSession, @RequestBody AddressDeleteRequest request) {
+        addressService.delete(memberSession.getId(), request.getAddressId());
+        return ResponseEntity.ok().build();
     }
 
 }
