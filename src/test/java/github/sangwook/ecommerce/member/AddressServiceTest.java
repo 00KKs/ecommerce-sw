@@ -95,6 +95,14 @@ public class AddressServiceTest {
     class 배송지_삭제 {
 
         @Test
+        void 삭제할_배송지가_내_배송지가_아닌_경우_예외가_발생한다() {
+            addressService.create(2L, "김철수", "010-3333-4444", "부산시", "경비실", false);
+            Address only = fakeAddressRepository.findAllByMemberId(2L).get(0);
+
+            assertThatThrownBy(() -> addressService.delete(1L, only.getId())).isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
         void 배송지가_한개일때_삭제하면_예외가_발생한다() {
             addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
             Address only = fakeAddressRepository.findAllByMemberId(1L).get(0);
