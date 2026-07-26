@@ -100,7 +100,7 @@ public class AddressServiceTest {
         }
 
         @Test
-        void 배송지가_여러개일때_기본_배송지를_삭제하면_예외가_발생한다() {
+        void 기본_배송지를_삭제하면_예외가_발생한다() {
 
         }
 
