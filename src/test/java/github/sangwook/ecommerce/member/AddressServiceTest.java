@@ -96,22 +96,36 @@ public class AddressServiceTest {
 
         @Test
         void 배송지가_한개일때_삭제하면_예외가_발생한다() {
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
+            Address only = fakeAddressRepository.findAllByMemberId(1L).get(0);
 
+            assertThatThrownBy(() -> addressService.delete(1L, only.getId())).isInstanceOf(IllegalStateException.class);
         }
 
         @Test
         void 기본_배송지를_삭제하면_예외가_발생한다() {
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
+            addressService.create(1L, "김철수", "010-3333-4444", "부산시", "경비실", false);
+            Address defaultAddr = fakeAddressRepository.findByMemberIdAndIsDefaultTrue(1L).get();
 
+            assertThatThrownBy(() -> addressService.delete(1L, defaultAddr.getId())).isInstanceOf(IllegalStateException.class);
         }
 
         @Test
         void 다른_배송지를_기본으로_지정한_후_기존_기본을_삭제하면_성공한다() {
-
+            //TODO 기본 배송지 지정 변경 구현 후 작성
         }
 
         @Test
         void 기본이_아닌_배송지는_삭제_가능하다() {
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
+            addressService.create(1L, "김철수", "010-3333-4444", "부산시", "경비실", false);
+            Address kim = fakeAddressRepository.findAllByMemberId(1L).stream().filter(a -> a.getRecipientName().equals("김철수")).findFirst().get();
 
+            addressService.delete(1L, kim.getId());
+
+            assertThat(fakeAddressRepository.countByMemberId(1L)).isEqualTo(1);
+            assertThat(fakeAddressRepository.findByMemberIdAndIsDefaultTrue(1L)).isPresent();
         }
 
     }

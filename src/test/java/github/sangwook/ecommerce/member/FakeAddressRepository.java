@@ -62,6 +62,11 @@ public class FakeAddressRepository implements AddressRepository {
         return Optional.empty();
     }
 
+    @Override
+    public void delete(Address address) {
+        map.remove(address.getId());
+    }
+
     private void injectId(Address address, Long id) {
         ReflectionTestUtils.setField(address, "id", id);
     }
