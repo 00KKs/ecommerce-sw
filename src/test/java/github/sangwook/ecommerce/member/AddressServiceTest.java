@@ -80,6 +80,14 @@ public class AddressServiceTest {
     }
 
     @Nested
+    class 배송지_수정 {
+        @Test
+        void 배송지_수정_시_회원_아이디가_다를_경우_예외가_발생한다() {
+
+        }
+    }
+
+    @Nested
     class 배송지_삭제 {
 
         @Test
