@@ -3,6 +3,7 @@ package github.sangwook.ecommerce.member.api;
 import github.sangwook.ecommerce.auth.LoginMember;
 import github.sangwook.ecommerce.auth.MemberSession;
 import github.sangwook.ecommerce.member.api.dto.AddressCreateRequest;
+import github.sangwook.ecommerce.member.api.dto.AddressUpdateRequest;
 import github.sangwook.ecommerce.member.application.AddressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,19 @@ public class AddressController {
             request.getAddress(),
             request.getDeliveryRequest(),
             request.isDefault()
+        );
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/update")
+    public ResponseEntity<Void> update(@LoginMember MemberSession memberSession, @RequestBody AddressUpdateRequest request) {
+        addressService.update(
+            memberSession.getId(),
+            request.getAddressId(),
+            request.getRecipientName(),
+            request.getRecipientPhone(),
+            request.getAddress(),
+            request.getDeliveryRequest()
         );
         return ResponseEntity.ok().build();
     }

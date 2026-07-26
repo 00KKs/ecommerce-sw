@@ -54,4 +54,11 @@ public class Address {
     public void unSetDefault() {
         this.isDefault = false;
     }
+
+    public void update(String recipientName, String recipientPhone, String address, String deliveryRequest) {
+        this.recipientName = recipientName;
+        this.recipientPhone = recipientPhone;
+        this.address = address;
+        this.deliveryRequest = deliveryRequest;
+    }
 }

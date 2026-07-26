@@ -32,4 +32,9 @@ public class AddressRepositoryImpl implements AddressRepository {
     public List<Address> findAllByMemberId(Long memberId) {
         return addressJpaRepository.findAllByMemberId(memberId);
     }
+
+    @Override
+    public Optional<Address> findById(Long id) {
+        return addressJpaRepository.findById(id);
+    }
 }

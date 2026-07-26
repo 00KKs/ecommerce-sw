@@ -23,6 +23,14 @@ public class AddressService {
         }
     }
 
+    @Transactional
+    public void update(Long memberId, Long addressId, String recipientName, String recipientPhone, String stringAddress, String deliveryRequest) {
+        Address address = addressRepository.findById(addressId).orElseThrow(() -> new IllegalStateException("배송지를 찾을 수 없습니다."));
+        if (!address.getMemberId().equals(memberId)) throw new IllegalStateException("권한이 없습니다.");
+        address.update(recipientName, recipientPhone, stringAddress, deliveryRequest);
+        addressRepository.save(address);
+    }
+
     private void applyDefault(Long memberId, Address target) {
         addressRepository.findByMemberIdAndIsDefaultTrue(memberId).ifPresent(
             address -> {
