@@ -26,7 +26,9 @@ public class FakeMemberRepository implements MemberRepository {
 
     @Override
     public Member save(Member member) {
-        injectId(member, ID_COUNTER.getAndIncrement());
+        if (member.getId() == null) {
+            injectId(member, ID_COUNTER.getAndIncrement());
+        }
         map.put(member.getId(), member);
         return member;
     }
