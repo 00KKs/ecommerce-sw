@@ -2,6 +2,7 @@ package github.sangwook.ecommerce.member;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import github.sangwook.ecommerce.member.application.AddressService;
 import github.sangwook.ecommerce.member.domain.Address;
@@ -121,7 +122,14 @@ public class AddressServiceTest {
 
         @Test
         void 다른_배송지를_기본으로_지정한_후_기존_기본을_삭제하면_성공한다() {
-            //TODO 기본 배송지 지정 변경 구현 후 작성
+            addressService.create(1L, "홍길동", "010-1111-2222", "서울시", "문앞", false);
+            addressService.create(1L, "김철수", "010-3333-4444", "부산시", "경비실", false);
+            Address old = fakeAddressRepository.findByMemberIdAndIsDefaultTrue(1L).get();
+            Address address = fakeAddressRepository.findAllByMemberId(1L).stream().filter(a -> a.getIsDefault() == false).findFirst().get();
+
+            addressService.updateDefault(1L, address.getId());
+
+            assertDoesNotThrow(() -> addressService.delete(1L, old.getId()));
         }
 
         @Test
