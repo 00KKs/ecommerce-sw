@@ -63,7 +63,7 @@ public class AddressController {
 
     @PostMapping("/default")
     public ResponseEntity<Void> updateDefault(@LoginMember MemberSession memberSession, @RequestBody AddressUpdateDefaultRequest request) {
-        addressService.updateDefault(memberSession.getId(), request.getAddressId());
+        addressService.changeDefault(memberSession.getId(), request.getAddressId());
         return ResponseEntity.ok().build();
     }
 

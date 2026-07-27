@@ -2,10 +2,11 @@ package github.sangwook.ecommerce.member.infrastructure;
 
 import github.sangwook.ecommerce.member.application.AddressRepository;
 import github.sangwook.ecommerce.member.domain.Address;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -14,18 +15,8 @@ public class AddressRepositoryImpl implements AddressRepository {
     private final AddressJpaRepository addressJpaRepository;
 
     @Override
-    public int countByMemberId(Long memberId) {
-        return addressJpaRepository.countByMemberId(memberId);
-    }
-
-    @Override
     public Address save(Address address) {
         return addressJpaRepository.save(address);
-    }
-
-    @Override
-    public Optional<Address> findByMemberIdAndIsDefaultTrue(Long memberId) {
-        return addressJpaRepository.findByMemberIdAndIsDefaultTrue(memberId);
     }
 
     @Override
@@ -39,7 +30,7 @@ public class AddressRepositoryImpl implements AddressRepository {
     }
 
     @Override
-    public void delete(Address address) {
-        addressJpaRepository.delete(address);
+    public void saveAll(List<Address> addresses) {
+        addressJpaRepository.saveAll(addresses);
     }
 }

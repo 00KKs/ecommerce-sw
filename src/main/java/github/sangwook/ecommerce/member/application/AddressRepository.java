@@ -6,15 +6,11 @@ import java.util.Optional;
 
 public interface AddressRepository {
 
-    int countByMemberId(Long memberId);
-
     Address save(Address address);
-
-    Optional<Address> findByMemberIdAndIsDefaultTrue(Long memberId);
 
     List<Address> findAllByMemberId(Long memberId);
 
     Optional<Address> findById(Long id);
 
-    void delete(Address address);
+    void saveAll(List<Address> addresses);
 }
