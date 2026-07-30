@@ -1,0 +1,43 @@
+package github.sangwook.ecommerce.catalog;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+public class ProductDomainTest {
+
+    @Nested
+    class 상품_등록 {
+
+        @Test
+        void 상품은_최초_생성_시_DRAFT_상태다() {
+
+        }
+
+    }
+
+    @Nested
+    class 상품_판매상태_변경 {
+
+        @Test
+        void SELLING과_STOPPED는_서로_전환_가능하다() {
+
+        }
+
+        @Test
+        void SELLING_또는_STOPPED_상태에서_DRAFT로는_되돌릴_수_없다 () {
+
+        }
+
+        @Test
+        void SELLING_상태인_SKU가_최소_하나_있어야_SELLING으로_전환할_수_있다() {
+
+        }
+
+        @Test
+        void 상품의_판매상태_변경은_SKU의_판매상태에_영향을_주지_않는다() {
+
+        }
+
+    }
+
+}
