@@ -1,5 +1,9 @@
 package github.sangwook.ecommerce.catalog;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import github.sangwook.ecommerce.catalog.domain.Product;
+import github.sangwook.ecommerce.catalog.domain.ProductSaleStatus;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +14,8 @@ public class ProductDomainTest {
 
         @Test
         void 상품은_최초_생성_시_DRAFT_상태다() {
-
+            Product product = new Product(1L, "상품1", "설명1");
+            assertThat(product.getSaleStatus()).isEqualTo(ProductSaleStatus.DRAFT);
         }
 
     }
