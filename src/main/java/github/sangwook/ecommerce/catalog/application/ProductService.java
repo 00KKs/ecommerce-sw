@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.catalog.application;
 
 import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
+import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
 import github.sangwook.ecommerce.catalog.domain.Product;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +21,22 @@ public class ProductService {
         productRepository.save(new Product(categoryId, name, description));
     }
 
+    @Transactional
+    public ProductUpdateResponse update(Long productId, String name, String description) {
+        Product product = getById(productId);
+        product.update(name, description);
+        product = productRepository.save(product);
+        return new ProductUpdateResponse(product.getId(), product.getName(), product.getDescription());
+    }
+
     public List<ProductSummaryResponse> getProductsByCategoryId(Long categoryId) {
         return productRepository.findAllByCategoryId(categoryId)
             .stream()
             .map(p -> new ProductSummaryResponse(p.getId(), p.getName()))
             .toList();
+    }
+
+    private Product getById(Long id) {
+        return productRepository.findById(id).orElseThrow(() -> new IllegalStateException("상품을 찾을 수 없습니다."));
     }
 }

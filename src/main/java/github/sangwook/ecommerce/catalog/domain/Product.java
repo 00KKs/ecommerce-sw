@@ -41,4 +41,9 @@ public class Product {
         this.description = description;
         this.saleStatus = ProductSaleStatus.DRAFT;
     }
+
+    public void update(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
 }
