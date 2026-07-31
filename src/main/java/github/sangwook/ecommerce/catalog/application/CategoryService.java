@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.catalog.service;
+package github.sangwook.ecommerce.catalog.application;
 
 import github.sangwook.ecommerce.catalog.api.dto.CategoryResponse;
 import github.sangwook.ecommerce.catalog.infrastructure.CategoryFlat;
