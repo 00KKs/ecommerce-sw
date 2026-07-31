@@ -25,4 +25,13 @@ public class CategoryRepository {
             ));
     }
 
+    public boolean existsById(Long categoryId) {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM category WHERE id = ?", Integer.class, categoryId);
+        return count != null && count > 0;
+    }
+
+    public int countDescendants(Long categoryId) {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM category_closure WHERE ancestor = ? AND depth > 0", Integer.class, categoryId);
+        return count != null ? count : 0;
+    }
 }
