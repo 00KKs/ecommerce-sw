@@ -40,4 +40,9 @@ public class CategoryService {
         return roots;
     }
 
+    public void validateLeafForProduct(Long categoryId) {
+        if (!categoryRepository.existsById(categoryId)) throw new IllegalStateException("존재하지 않는 카테고리입니다.");
+        if (categoryRepository.countDescendants(categoryId) > 0) throw new IllegalStateException("상품은 최하위 카테고리에만 추가할 수 있습니다.");
+    }
+
 }
