@@ -33,6 +33,7 @@ public class ProductService {
     public List<ProductSummaryResponse> getProductsByCategoryId(Long categoryId) {
         return productRepository.findAllByCategoryId(categoryId)
             .stream()
+            .filter(Product::isDisplayable)
             .map(p -> new ProductSummaryResponse(p.getId(), p.getName()))
             .toList();
     }
