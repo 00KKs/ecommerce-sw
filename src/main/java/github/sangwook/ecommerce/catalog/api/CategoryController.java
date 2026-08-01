@@ -1,7 +1,7 @@
 package github.sangwook.ecommerce.catalog.api;
 
 import github.sangwook.ecommerce.catalog.api.dto.CategoryResponse;
-import github.sangwook.ecommerce.catalog.service.CategoryService;
+import github.sangwook.ecommerce.catalog.application.CategoryService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
