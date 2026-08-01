@@ -46,4 +46,9 @@ public class Product {
         this.name = name;
         this.description = description;
     }
+
+    public void changeStatus(ProductSaleStatus status) {
+        if (status == ProductSaleStatus.DRAFT) throw new IllegalStateException("DRAFT 상태로는 변경할 수 없습니다.");
+        this.saleStatus = status;
+    }
 }
