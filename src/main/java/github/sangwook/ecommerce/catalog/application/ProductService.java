@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.catalog.application;
 
+import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
 import github.sangwook.ecommerce.catalog.domain.Product;
@@ -34,6 +35,18 @@ public class ProductService {
             .stream()
             .map(p -> new ProductSummaryResponse(p.getId(), p.getName()))
             .toList();
+    }
+
+    public ProductDetailResponse getProductDetail(Long productId) {
+        Product product = getById(productId);
+        if (!product.isDisplayable()) throw new IllegalStateException("상품을 찾을 수 없습니다.");
+        return new ProductDetailResponse(
+            product.getId(),
+            product.getCategoryId(),
+            product.getName(),
+            product.getDescription(),
+            product.getSaleStatus()
+        );
     }
 
     private Product getById(Long id) {

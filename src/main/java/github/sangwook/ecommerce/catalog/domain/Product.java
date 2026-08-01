@@ -51,4 +51,8 @@ public class Product {
         if (status == ProductSaleStatus.DRAFT) throw new IllegalStateException("DRAFT 상태로는 변경할 수 없습니다.");
         this.saleStatus = status;
     }
+
+    public boolean isDisplayable() {
+        return saleStatus == ProductSaleStatus.SELLING;
+    }
 }

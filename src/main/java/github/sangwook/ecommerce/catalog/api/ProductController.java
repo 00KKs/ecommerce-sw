@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.catalog.api;
 
 import github.sangwook.ecommerce.catalog.api.dto.ProductCreateRequest;
+import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateRequest;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
@@ -37,6 +38,11 @@ public class ProductController {
     @PostMapping("/{productId}/update")
     public ResponseEntity<ProductUpdateResponse> update(@PathVariable Long productId, @RequestBody ProductUpdateRequest request) {
         return ResponseEntity.ok(productService.update(productId, request.getName(), request.getDescription()));
+    }
+
+    @GetMapping("/{productId}")
+    public ResponseEntity<ProductDetailResponse> getDetail(@PathVariable Long productId) {
+        return ResponseEntity.ok(productService.getProductDetail(productId));
     }
 
 }
