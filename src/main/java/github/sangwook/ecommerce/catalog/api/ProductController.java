@@ -1,10 +1,6 @@
 package github.sangwook.ecommerce.catalog.api;
 
-import github.sangwook.ecommerce.catalog.api.dto.ProductCreateRequest;
-import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
-import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
-import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateRequest;
-import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
+import github.sangwook.ecommerce.catalog.api.dto.*;
 import github.sangwook.ecommerce.catalog.application.ProductService;
 import github.sangwook.ecommerce.openapi.ProductOpenApiDocs;
 import java.util.List;
@@ -44,6 +40,11 @@ public class ProductController implements ProductOpenApiDocs {
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailResponse> getDetail(@PathVariable Long productId) {
         return ResponseEntity.ok(productService.getProductDetail(productId));
+    }
+
+    @PostMapping("/{productId}/status")
+    public ResponseEntity<ProductStatusResponse> changeStatus(@PathVariable Long productId, @RequestBody ProductStatusRequest request) {
+        return ResponseEntity.ok(productService.changeStatus(productId, request.getStatus()));
     }
 
 }

@@ -1,10 +1,15 @@
 package github.sangwook.ecommerce.catalog.application;
 
 import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
+import github.sangwook.ecommerce.catalog.api.dto.ProductStatusResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
 import github.sangwook.ecommerce.catalog.domain.Product;
 import java.util.List;
+
+import github.sangwook.ecommerce.catalog.domain.ProductSalePolicy;
+import github.sangwook.ecommerce.catalog.domain.ProductSaleStatus;
+import github.sangwook.ecommerce.catalog.domain.Sku;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final SkuRepository skuRepository;
+
     private final CategoryService categoryService;
 
     @Transactional
@@ -33,14 +40,14 @@ public class ProductService {
     public List<ProductSummaryResponse> getProductsByCategoryId(Long categoryId) {
         return productRepository.findAllByCategoryId(categoryId)
             .stream()
-            .filter(Product::isDisplayable)
+            .filter(Product::isSellable)
             .map(p -> new ProductSummaryResponse(p.getId(), p.getName()))
             .toList();
     }
 
     public ProductDetailResponse getProductDetail(Long productId) {
         Product product = getById(productId);
-        if (!product.isDisplayable()) throw new IllegalStateException("상품을 찾을 수 없습니다.");
+        if (!product.isSellable()) throw new IllegalStateException("상품을 찾을 수 없습니다.");
         return new ProductDetailResponse(
             product.getId(),
             product.getCategoryId(),
@@ -48,6 +55,19 @@ public class ProductService {
             product.getDescription(),
             product.getSaleStatus()
         );
+    }
+
+    @Transactional
+    public ProductStatusResponse changeStatus(Long productId, ProductSaleStatus status) {
+        Product product = getById(productId);
+        List<Sku> skus = skuRepository.findAllByProductId(productId);
+
+        ProductSalePolicy policy = new ProductSalePolicy(skus);
+        policy.validateTransitionTo(status);
+
+        product.changeStatus(status);
+        productRepository.save(product);
+        return new ProductStatusResponse(product.getId(), product.getSaleStatus());
     }
 
     private Product getById(Long id) {

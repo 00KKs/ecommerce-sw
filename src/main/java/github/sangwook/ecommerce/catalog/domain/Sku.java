@@ -35,4 +35,7 @@ public class Sku {
         this.status = SkuSaleStatus.STOPPED;
     }
 
+    public boolean isSellable() {
+        return status == SkuSaleStatus.SELLING;
+    }
 }
