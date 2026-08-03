@@ -8,6 +8,7 @@ import github.sangwook.ecommerce.member.api.dto.AddressResponse;
 import github.sangwook.ecommerce.member.api.dto.AddressUpdateDefaultRequest;
 import github.sangwook.ecommerce.member.api.dto.AddressUpdateRequest;
 import github.sangwook.ecommerce.member.application.AddressService;
+import github.sangwook.ecommerce.openapi.AddressOpenApiDocs;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/members/addresses")
 @RequiredArgsConstructor
-public class AddressController {
+public class AddressController implements AddressOpenApiDocs {
 
     private final AddressService addressService;
 
