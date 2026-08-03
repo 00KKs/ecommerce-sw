@@ -5,6 +5,7 @@ import github.sangwook.ecommerce.auth.SessionKeys;
 import github.sangwook.ecommerce.member.api.dto.MemberJoinRequest;
 import github.sangwook.ecommerce.member.api.dto.MemberLoginRequest;
 import github.sangwook.ecommerce.member.application.MemberService;
+import github.sangwook.ecommerce.openapi.MemberOpenApiDocs;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
-public class MemberController {
+public class MemberController implements MemberOpenApiDocs {
 
     private final MemberService memberService;
 

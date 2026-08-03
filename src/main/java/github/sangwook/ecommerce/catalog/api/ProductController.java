@@ -6,6 +6,7 @@ import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateRequest;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
 import github.sangwook.ecommerce.catalog.application.ProductService;
+import github.sangwook.ecommerce.openapi.ProductOpenApiDocs;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
-public class ProductController {
+public class ProductController implements ProductOpenApiDocs {
 
     private final ProductService productService;
 
