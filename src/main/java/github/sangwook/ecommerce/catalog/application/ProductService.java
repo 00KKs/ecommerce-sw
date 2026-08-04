@@ -39,10 +39,9 @@ public class ProductService {
     }
 
     public List<ProductSummaryResponse> getProductsByCategoryId(Long categoryId) {
-        return productRepository.findAllByCategoryId(categoryId)
+        return productRepository.findSellableSummaries(categoryId)
             .stream()
-            .filter(Product::isSellable)
-            .map(p -> new ProductSummaryResponse(p.getId(), p.getName()))
+            .map(p -> new ProductSummaryResponse(p.getId(), p.getName(), p.getLowestPrice()))
             .toList();
     }
 
