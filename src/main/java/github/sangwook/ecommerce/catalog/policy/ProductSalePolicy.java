@@ -1,5 +1,7 @@
-package github.sangwook.ecommerce.catalog.domain;
+package github.sangwook.ecommerce.catalog.policy;
 
+import github.sangwook.ecommerce.catalog.domain.ProductSaleStatus;
+import github.sangwook.ecommerce.catalog.domain.Sku;
 import java.util.List;
 
 public class ProductSalePolicy {

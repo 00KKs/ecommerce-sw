@@ -7,7 +7,7 @@ import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
 import github.sangwook.ecommerce.catalog.domain.Product;
 import java.util.List;
 
-import github.sangwook.ecommerce.catalog.domain.ProductSalePolicy;
+import github.sangwook.ecommerce.catalog.policy.ProductSalePolicy;
 import github.sangwook.ecommerce.catalog.domain.ProductSaleStatus;
 import github.sangwook.ecommerce.catalog.domain.Sku;
 import lombok.RequiredArgsConstructor;
