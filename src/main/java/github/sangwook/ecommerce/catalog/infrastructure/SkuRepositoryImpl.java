@@ -17,4 +17,9 @@ public class SkuRepositoryImpl implements SkuRepository {
     public List<Sku> findAllByProductId(Long productId) {
         return skuJpaRepository.findAllByProductId(productId);
     }
+
+    @Override
+    public Sku save(Sku sku) {
+        return skuJpaRepository.save(sku);
+    }
 }

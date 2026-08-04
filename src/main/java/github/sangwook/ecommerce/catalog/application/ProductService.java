@@ -70,6 +70,10 @@ public class ProductService {
         return new ProductStatusResponse(product.getId(), product.getSaleStatus());
     }
 
+    public void validateExists(Long productId) {
+        if (!productRepository.existsById(productId)) throw new IllegalStateException("상품을 찾을 수 없습니다.");
+    }
+
     private Product getById(Long id) {
         return productRepository.findById(id).orElseThrow(() -> new IllegalStateException("상품을 찾을 수 없습니다."));
     }

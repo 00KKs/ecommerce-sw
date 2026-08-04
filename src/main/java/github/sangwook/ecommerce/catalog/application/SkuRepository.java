@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface SkuRepository {
     List<Sku> findAllByProductId(Long productId);
+
+    Sku save(Sku sku);
 }
