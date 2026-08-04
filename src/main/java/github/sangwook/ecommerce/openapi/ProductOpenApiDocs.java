@@ -19,7 +19,7 @@ public interface ProductOpenApiDocs {
 
     @Operation(
         summary = "카테고리별 상품 목록 조회",
-        description = "지정한 카테고리 ID에 속한 상품 목록을 반환합니다."
+        description = "지정한 카테고리와 그 하위 카테고리에 속한 판매중인 상품 목록을 최저가와 함께 반환합니다."
     )
     @ApiResponse(responseCode = "200", description = "조회 성공")
     ResponseEntity<List<ProductSummaryResponse>> getProductsByCategoryId(Long categoryId);
