@@ -4,6 +4,7 @@ import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductStatusResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
+import github.sangwook.ecommerce.catalog.api.dto.SkuDetailResponse;
 import github.sangwook.ecommerce.catalog.domain.Product;
 import java.util.List;
 
@@ -48,12 +49,19 @@ public class ProductService {
     public ProductDetailResponse getProductDetail(Long productId) {
         Product product = getById(productId);
         if (!product.isSellable()) throw new IllegalStateException("상품을 찾을 수 없습니다.");
+        List<SkuDetailResponse> skus = skuRepository.findAllByProductId(productId)
+            .stream()
+            .filter(Sku::isSellable)
+            .map(sku -> new SkuDetailResponse(sku.getId(), sku.getOptionName(), sku.getPrice(), sku.getStatus()))
+            .toList();
+
         return new ProductDetailResponse(
             product.getId(),
             product.getCategoryId(),
             product.getName(),
             product.getDescription(),
-            product.getSaleStatus()
+            product.getSaleStatus(),
+            skus
         );
     }
 
