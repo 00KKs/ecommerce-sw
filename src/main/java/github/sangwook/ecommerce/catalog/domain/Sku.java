@@ -29,6 +29,7 @@ public class Sku {
     }
 
     public Sku(Long productId, String optionName, int price) {
+        validatePrice(price);
         this.productId = productId;
         this.optionName = optionName;
         this.price = price;
@@ -37,5 +38,14 @@ public class Sku {
 
     public boolean isSellable() {
         return status == SkuSaleStatus.SELLING;
+    }
+
+    public void updatePrice(Integer price) {
+        validatePrice(price);
+        this.price = price;
+    }
+
+    private void validatePrice(Integer price) {
+        if (price <= 0) throw new IllegalStateException("가격은 0이거나 음수일 수 없습니다.");
     }
 }
