@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.catalog.application;
 
 import github.sangwook.ecommerce.catalog.api.dto.SkuCreateResponse;
+import github.sangwook.ecommerce.catalog.api.dto.SkuDetailResponse;
 import github.sangwook.ecommerce.catalog.domain.Sku;
 import github.sangwook.ecommerce.catalog.policy.SkuCreatePolicy;
 import java.util.List;
@@ -30,5 +31,12 @@ public class SkuService {
 
     public List<Sku> getByProductId(Long productId) {
         return skuRepository.findAllByProductId(productId);
+    }
+
+    public List<SkuDetailResponse> getAllByProductId(Long productId) {
+        return skuRepository.findAllByProductId(productId)
+            .stream()
+            .map(sku -> new SkuDetailResponse(sku.getId(), sku.getOptionName(), sku.getPrice(), sku.getStatus()))
+            .toList();
     }
 }
