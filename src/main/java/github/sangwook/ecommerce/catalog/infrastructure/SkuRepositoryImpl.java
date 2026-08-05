@@ -2,6 +2,7 @@ package github.sangwook.ecommerce.catalog.infrastructure;
 
 import github.sangwook.ecommerce.catalog.application.SkuRepository;
 import github.sangwook.ecommerce.catalog.domain.Sku;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -21,5 +22,10 @@ public class SkuRepositoryImpl implements SkuRepository {
     @Override
     public Sku save(Sku sku) {
         return skuJpaRepository.save(sku);
+    }
+
+    @Override
+    public Optional<Sku> findById(Long id) {
+        return skuJpaRepository.findById(id);
     }
 }

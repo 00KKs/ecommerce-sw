@@ -2,6 +2,7 @@ package github.sangwook.ecommerce.catalog.application;
 
 import github.sangwook.ecommerce.catalog.api.dto.SkuCreateResponse;
 import github.sangwook.ecommerce.catalog.api.dto.SkuDetailResponse;
+import github.sangwook.ecommerce.catalog.api.dto.SkuUpdatePriceResponse;
 import github.sangwook.ecommerce.catalog.domain.Sku;
 import github.sangwook.ecommerce.catalog.policy.SkuCreatePolicy;
 import java.util.List;
@@ -38,5 +39,16 @@ public class SkuService {
             .stream()
             .map(sku -> new SkuDetailResponse(sku.getId(), sku.getOptionName(), sku.getPrice(), sku.getStatus()))
             .toList();
+    }
+
+    public SkuUpdatePriceResponse updatePrice(Long skuId, Integer price) {
+        Sku sku = getById(skuId);
+        sku.updatePrice(price);
+        sku = skuRepository.save(sku);
+        return new SkuUpdatePriceResponse(sku.getId(), sku.getPrice());
+    }
+
+    private Sku getById(Long id) {
+        return skuRepository.findById(id).orElseThrow(() -> new IllegalStateException("존재하지 않는 SKU입니다."));
     }
 }
