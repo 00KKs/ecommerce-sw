@@ -1,9 +1,6 @@
 package github.sangwook.ecommerce.catalog.api;
 
-import github.sangwook.ecommerce.catalog.api.dto.SkuCreateRequest;
-import github.sangwook.ecommerce.catalog.api.dto.SkuCreateResponse;
-import github.sangwook.ecommerce.catalog.api.dto.SkuDetailResponse;
-import github.sangwook.ecommerce.catalog.api.dto.SkuUpdatePriceRequest;
+import github.sangwook.ecommerce.catalog.api.dto.*;
 import github.sangwook.ecommerce.catalog.application.SkuService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +28,12 @@ public class SkuController {
     }
 
     @PostMapping("/api/skus/{skuId}/price")
-    public ResponseEntity<?> updatePrice(@PathVariable Long skuId, @RequestBody SkuUpdatePriceRequest request) {
+    public ResponseEntity<SkuUpdatePriceResponse> updatePrice(@PathVariable Long skuId, @RequestBody SkuUpdatePriceRequest request) {
         return ResponseEntity.ok(skuService.updatePrice(skuId, request.getPrice()));
     }
 
+    @PostMapping("/api/skus/{skuId}/status")
+    public ResponseEntity<SkuStatusResponse> changeStatus(@PathVariable Long skuId, @RequestBody SkuStatusRequest request) {
+        return ResponseEntity.ok(skuService.changeStatus(skuId, request.getStatus()));
+    }
 }

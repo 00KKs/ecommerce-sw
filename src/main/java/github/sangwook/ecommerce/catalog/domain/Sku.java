@@ -48,4 +48,8 @@ public class Sku {
     private void validatePrice(Integer price) {
         if (price <= 0) throw new IllegalStateException("가격은 0이거나 음수일 수 없습니다.");
     }
+
+    public void changeStatus(SkuSaleStatus status) {
+        this.status = status;
+    }
 }

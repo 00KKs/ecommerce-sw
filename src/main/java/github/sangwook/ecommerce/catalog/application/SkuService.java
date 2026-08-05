@@ -2,8 +2,10 @@ package github.sangwook.ecommerce.catalog.application;
 
 import github.sangwook.ecommerce.catalog.api.dto.SkuCreateResponse;
 import github.sangwook.ecommerce.catalog.api.dto.SkuDetailResponse;
+import github.sangwook.ecommerce.catalog.api.dto.SkuStatusResponse;
 import github.sangwook.ecommerce.catalog.api.dto.SkuUpdatePriceResponse;
 import github.sangwook.ecommerce.catalog.domain.Sku;
+import github.sangwook.ecommerce.catalog.domain.SkuSaleStatus;
 import github.sangwook.ecommerce.catalog.policy.SkuCreatePolicy;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -41,11 +43,20 @@ public class SkuService {
             .toList();
     }
 
+    @Transactional
     public SkuUpdatePriceResponse updatePrice(Long skuId, Integer price) {
         Sku sku = getById(skuId);
         sku.updatePrice(price);
         sku = skuRepository.save(sku);
         return new SkuUpdatePriceResponse(sku.getId(), sku.getPrice());
+    }
+
+    @Transactional
+    public SkuStatusResponse changeStatus(Long skuId, SkuSaleStatus status) {
+        Sku sku = getById(skuId);
+        sku.changeStatus(status);
+        sku = skuRepository.save(sku);
+        return new SkuStatusResponse(sku.getId(), sku.getStatus());
     }
 
     private Sku getById(Long id) {
