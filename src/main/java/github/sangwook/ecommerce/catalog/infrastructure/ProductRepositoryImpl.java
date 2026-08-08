@@ -14,11 +14,6 @@ public class ProductRepositoryImpl implements ProductRepository {
     private final ProductJpaRepository productJpaRepository;
 
     @Override
-    public List<Product> findAllByCategoryId(Long categoryId) {
-        return productJpaRepository.findAllByCategoryId(categoryId);
-    }
-
-    @Override
     public Product save(Product product) {
         return productJpaRepository.save(product);
     }
@@ -26,5 +21,15 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public Optional<Product> findById(Long id) {
         return productJpaRepository.findById(id);
+    }
+
+    @Override
+    public boolean existsById(Long productId) {
+        return productJpaRepository.existsById(productId);
+    }
+
+    @Override
+    public List<ProductSummaryProjection> findSellableSummaries(Long categoryId) {
+        return productJpaRepository.findSellableSummaries(categoryId);
     }
 }

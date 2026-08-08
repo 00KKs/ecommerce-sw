@@ -9,9 +9,9 @@ public class ProductSummaryResponse {
     private String name;
     private Integer lowestPrice;
 
-    public ProductSummaryResponse(Long id, String name) {
+    public ProductSummaryResponse(Long id, String name, Integer lowestPrice) {
         this.id = id;
         this.name = name;
-        this.lowestPrice = 0; //FIXME SKU 도입 시 가격 추가
+        this.lowestPrice = lowestPrice;
     }
 }

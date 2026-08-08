@@ -1,10 +1,6 @@
 package github.sangwook.ecommerce.openapi;
 
-import github.sangwook.ecommerce.catalog.api.dto.ProductCreateRequest;
-import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
-import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
-import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateRequest;
-import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
+import github.sangwook.ecommerce.catalog.api.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,7 +19,7 @@ public interface ProductOpenApiDocs {
 
     @Operation(
         summary = "카테고리별 상품 목록 조회",
-        description = "지정한 카테고리 ID에 속한 상품 목록을 반환합니다."
+        description = "지정한 카테고리와 그 하위 카테고리에 속한 판매중인 상품 목록을 최저가와 함께 반환합니다."
     )
     @ApiResponse(responseCode = "200", description = "조회 성공")
     ResponseEntity<List<ProductSummaryResponse>> getProductsByCategoryId(Long categoryId);
@@ -41,4 +37,11 @@ public interface ProductOpenApiDocs {
     )
     @ApiResponse(responseCode = "200", description = "조회 성공")
     ResponseEntity<ProductDetailResponse> getDetail(Long productId);
+    @Operation(
+            summary = "상품 판매상태 변경",
+            description = "상품의 판매상태를 변경합니다. SELLING으로 전환하려면 SELLING 상태인 SKU가 최소 하나 있어야 하며, DRAFT로는 되돌릴 수 없습니다."
+    )
+
+    @ApiResponse(responseCode = "200", description = "변경 성공")
+    ResponseEntity<ProductStatusResponse> changeStatus(Long productId, ProductStatusRequest request);
 }

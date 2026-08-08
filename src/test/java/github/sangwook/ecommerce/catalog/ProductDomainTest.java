@@ -42,16 +42,6 @@ public class ProductDomainTest {
             assertThatThrownBy(() -> product.changeStatus(ProductSaleStatus.DRAFT)).isInstanceOf(IllegalStateException.class);
         }
 
-        @Test
-        void SELLING_상태인_SKU가_최소_하나_있어야_SELLING으로_전환할_수_있다() {
-            //TODO SKU 구현 단계에서 작성
-        }
-
-        @Test
-        void 상품의_판매상태_변경은_SKU의_판매상태에_영향을_주지_않는다() {
-            //TODO SKU 구현 단계에서 작성
-        }
-
     }
 
 }

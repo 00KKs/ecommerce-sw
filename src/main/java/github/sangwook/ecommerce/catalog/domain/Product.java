@@ -52,7 +52,7 @@ public class Product {
         this.saleStatus = status;
     }
 
-    public boolean isDisplayable() {
+    public boolean isSellable() {
         return saleStatus == ProductSaleStatus.SELLING;
     }
 }

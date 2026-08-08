@@ -1,10 +1,16 @@
 package github.sangwook.ecommerce.catalog.application;
 
 import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
+import github.sangwook.ecommerce.catalog.api.dto.ProductStatusResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductUpdateResponse;
+import github.sangwook.ecommerce.catalog.api.dto.SkuDetailResponse;
 import github.sangwook.ecommerce.catalog.domain.Product;
 import java.util.List;
+
+import github.sangwook.ecommerce.catalog.policy.ProductSalePolicy;
+import github.sangwook.ecommerce.catalog.domain.ProductSaleStatus;
+import github.sangwook.ecommerce.catalog.domain.Sku;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final SkuRepository skuRepository;
+
     private final CategoryService categoryService;
 
     @Transactional
@@ -31,23 +39,46 @@ public class ProductService {
     }
 
     public List<ProductSummaryResponse> getProductsByCategoryId(Long categoryId) {
-        return productRepository.findAllByCategoryId(categoryId)
+        return productRepository.findSellableSummaries(categoryId)
             .stream()
-            .filter(Product::isDisplayable)
-            .map(p -> new ProductSummaryResponse(p.getId(), p.getName()))
+            .map(p -> new ProductSummaryResponse(p.getId(), p.getName(), p.getLowestPrice()))
             .toList();
     }
 
     public ProductDetailResponse getProductDetail(Long productId) {
         Product product = getById(productId);
-        if (!product.isDisplayable()) throw new IllegalStateException("상품을 찾을 수 없습니다.");
+        if (!product.isSellable()) throw new IllegalStateException("상품을 찾을 수 없습니다.");
+        List<SkuDetailResponse> skus = skuRepository.findAllByProductId(productId)
+            .stream()
+            .filter(Sku::isSellable)
+            .map(sku -> new SkuDetailResponse(sku.getId(), sku.getOptionName(), sku.getPrice(), sku.getStatus()))
+            .toList();
+
         return new ProductDetailResponse(
             product.getId(),
             product.getCategoryId(),
             product.getName(),
             product.getDescription(),
-            product.getSaleStatus()
+            product.getSaleStatus(),
+            skus
         );
+    }
+
+    @Transactional
+    public ProductStatusResponse changeStatus(Long productId, ProductSaleStatus status) {
+        Product product = getById(productId);
+        List<Sku> skus = skuRepository.findAllByProductId(productId);
+
+        ProductSalePolicy policy = new ProductSalePolicy(skus);
+        policy.validateTransitionTo(status);
+
+        product.changeStatus(status);
+        productRepository.save(product);
+        return new ProductStatusResponse(product.getId(), product.getSaleStatus());
+    }
+
+    public void validateExists(Long productId) {
+        if (!productRepository.existsById(productId)) throw new IllegalStateException("상품을 찾을 수 없습니다.");
     }
 
     private Product getById(Long id) {
