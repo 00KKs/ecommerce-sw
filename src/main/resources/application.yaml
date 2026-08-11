@@ -1,8 +1,17 @@
 spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/appdb
+    username: postgres
+    password: 1234
   application:
     name: ecommerce
-  h2:
-    console:
-      enabled: true
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    open-in-view: false
+  sql:
+    init:
+      mode: always
