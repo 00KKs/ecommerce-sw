@@ -1,6 +1,6 @@
 CREATE TABLE category
 (
-    id   BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id   BIGINT PRIMARY KEY,
     name VARCHAR(100) NOT NULL
 );
 
