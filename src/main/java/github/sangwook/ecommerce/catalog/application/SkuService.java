@@ -7,6 +7,7 @@ import github.sangwook.ecommerce.catalog.api.dto.SkuUpdatePriceResponse;
 import github.sangwook.ecommerce.catalog.domain.Sku;
 import github.sangwook.ecommerce.catalog.domain.SkuSaleStatus;
 import github.sangwook.ecommerce.catalog.policy.SkuCreatePolicy;
+import github.sangwook.ecommerce.catalog.port.StockInitializer;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SkuService {
 
     private final ProductService productService;
+    private final StockInitializer stockInitializer;
 
     private final SkuRepository skuRepository;
 
@@ -29,6 +31,7 @@ public class SkuService {
         policy.validateOptionNameExists(optionName);
 
         Sku sku = skuRepository.save(new Sku(productId, optionName, price));
+        stockInitializer.initializeZero(sku.getId());
         return new SkuCreateResponse(sku.getId());
     }
 
