@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS category_closure;
+DROP TABLE IF EXISTS category;
+
 CREATE TABLE category
 (
     id   BIGINT PRIMARY KEY,
