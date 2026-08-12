@@ -15,4 +15,9 @@ public class StockRepositoryImpl implements StockRepository {
     public Stock save(Stock stock) {
         return stockJpaRepository.save(stock);
     }
+
+    @Override
+    public Stock findStockWithWriteLock(Long skuId) {
+        return stockJpaRepository.findStockWithWriteLock(skuId);
+    }
 }

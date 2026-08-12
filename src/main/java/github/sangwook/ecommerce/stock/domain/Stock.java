@@ -24,4 +24,8 @@ public class Stock {
         this.skuId = skuId;
         this.quantity = quantity;
     }
+
+    public void inbound(Integer quantity) {
+        this.quantity += quantity;
+    }
 }
