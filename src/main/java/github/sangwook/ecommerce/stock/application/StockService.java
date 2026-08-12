@@ -20,7 +20,6 @@ public class StockService {
     @Transactional
     public StockInboundResponse inbound(Long skuId, Integer quantity) {
         Stock stock = stockRepository.findStockWithWriteLock(skuId);
-        if (stock == null) throw new IllegalStateException("skuId=" + skuId + " 에 해당하는 Stock이 초기화되지 않았습니다."); //FIXME 불변식 위반
         stock.inbound(quantity);
         stock = stockRepository.save(stock);
         return new StockInboundResponse(stock.getSkuId(), stock.getQuantity());
