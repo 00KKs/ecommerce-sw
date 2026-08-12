@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.stock.application;
 
 import github.sangwook.ecommerce.stock.api.dto.StockInboundResponse;
+import github.sangwook.ecommerce.stock.api.dto.StockResponse;
 import github.sangwook.ecommerce.stock.domain.Stock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,5 +24,10 @@ public class StockService {
         stock.inbound(quantity);
         stock = stockRepository.save(stock);
         return new StockInboundResponse(stock.getSkuId(), stock.getQuantity());
+    }
+
+    public StockResponse getItem(Long skuId) {
+        Stock stock = stockRepository.getStockOrThrow(skuId);
+        return new StockResponse(stock.getSkuId(), stock.getQuantity());
     }
 }

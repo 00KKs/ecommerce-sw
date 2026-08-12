@@ -9,10 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface StockJpaRepository extends JpaRepository<Stock, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "5000"))
     @Query("select s from Stock s where s.skuId = :skuId")
-    Stock findStockWithWriteLock(@Param("skuId") Long skuId);
+    Optional<Stock> findStockWithWriteLock(@Param("skuId") Long skuId);
 }
