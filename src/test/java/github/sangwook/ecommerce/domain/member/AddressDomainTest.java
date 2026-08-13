@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.member;
+package github.sangwook.ecommerce.domain.member;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
