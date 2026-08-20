@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class AddressAdapter implements AddressPort {
+class AddressAdapter implements AddressPort {
 
     private final AddressService addressService;
 
