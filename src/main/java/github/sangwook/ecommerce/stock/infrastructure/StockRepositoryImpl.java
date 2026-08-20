@@ -19,11 +19,6 @@ public class StockRepositoryImpl implements StockRepository {
     }
 
     @Override
-    public Stock findStockWithWriteLock(Long skuId) {
-        return requireStock(stockJpaRepository.findStockWithWriteLock(skuId), skuId);
-    }
-
-    @Override
     public Stock getStockOrThrow(Long skuId) {
         return requireStock(stockJpaRepository.findById(skuId), skuId);
     }
@@ -31,6 +26,11 @@ public class StockRepositoryImpl implements StockRepository {
     @Override
     public int decreaseIfEnough(Long skuId, Integer quantity) {
         return stockJpaRepository.decreaseIfEnough(skuId, quantity);
+    }
+
+    @Override
+    public void increase(Long skuId, Integer quantity) {
+        stockJpaRepository.increase(skuId, quantity);
     }
 
     private Stock requireStock(Optional<Stock> stock, Long skuId) {

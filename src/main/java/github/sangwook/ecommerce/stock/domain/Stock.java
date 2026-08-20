@@ -26,11 +26,6 @@ public class Stock {
         this.quantity = quantity;
     }
 
-    public void inbound(Integer quantity) {
-        validateQuantityPositive(quantity);
-        this.quantity += quantity;
-    }
-
     private void validateQuantityPositive(Integer quantity) {
         if (quantity <= 0) {
             throw new IllegalStateException("재고는 1 이상의 값만 입력할 수 있습니다.");
