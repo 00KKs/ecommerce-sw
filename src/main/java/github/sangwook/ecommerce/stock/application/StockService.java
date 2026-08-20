@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.stock.application;
 
+import github.sangwook.ecommerce.stock.OutOfStockException;
 import github.sangwook.ecommerce.stock.api.dto.StockInboundResponse;
 import github.sangwook.ecommerce.stock.api.dto.StockResponse;
 import github.sangwook.ecommerce.stock.domain.Stock;
@@ -29,5 +30,11 @@ public class StockService {
     public StockResponse getItem(Long skuId) {
         Stock stock = stockRepository.getStockOrThrow(skuId);
         return new StockResponse(stock.getSkuId(), stock.getQuantity());
+    }
+
+    @Transactional
+    public void decreaseIfEnough(Long skuId, Integer quantity) {
+        int updated = stockRepository.decreaseIfEnough(skuId, quantity);
+        if (updated == 0) throw new OutOfStockException(skuId);
     }
 }
