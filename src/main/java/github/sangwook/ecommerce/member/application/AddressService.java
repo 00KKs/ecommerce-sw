@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.member.application;
 
+import github.sangwook.ecommerce.member.adapter.dto.AddressInfo;
 import github.sangwook.ecommerce.member.api.dto.AddressResponse;
 import github.sangwook.ecommerce.member.domain.Address;
 import java.util.List;
@@ -50,6 +51,12 @@ public class AddressService {
         book.changeDefault(addressId);
         addressRepository.saveAll(book.getAddresses());
     }
+
+    public AddressInfo getAddress(Long memberId, Long addressId) {
+        Address address = getByIdAndMemberId(addressId, memberId);
+        return new AddressInfo(address.getRecipientName(), address.getRecipientPhone(), address.getAddress(), address.getDeliveryRequest());
+    }
+
     private Address getByIdAndMemberId(Long addressId, Long memberId) {
         return addressRepository.findByIdAndMemberId(addressId, memberId).orElseThrow(() -> new IllegalStateException("배송지를 찾을 수 없습니다."));
     }

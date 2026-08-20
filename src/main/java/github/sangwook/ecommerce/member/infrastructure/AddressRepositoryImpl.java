@@ -33,4 +33,9 @@ public class AddressRepositoryImpl implements AddressRepository {
     public void saveAll(List<Address> addresses) {
         addressJpaRepository.saveAll(addresses);
     }
+
+    @Override
+    public Optional<Address> findByIdAndMemberId(Long addressId, Long memberId) {
+        return addressJpaRepository.findByIdAndMemberId(addressId, memberId);
+    }
 }
