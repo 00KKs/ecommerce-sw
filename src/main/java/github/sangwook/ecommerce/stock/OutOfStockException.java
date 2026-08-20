@@ -1,8 +1,17 @@
 package github.sangwook.ecommerce.stock;
 
+import lombok.Getter;
+
+@Getter
 public class OutOfStockException extends RuntimeException {
 
-    public OutOfStockException(Long skuId) {
-        super("skuId: " + skuId + " 상품의 재고가 부족합니다.");
+    private final Long skuId;
+    private final Integer requestQuantity;
+    private final Integer availableQuantity;
+
+    public OutOfStockException(Long skuId, Integer requestQuantity, Integer availableQuantity) {
+        this.skuId = skuId;
+        this.requestQuantity = requestQuantity;
+        this.availableQuantity = availableQuantity;
     }
 }

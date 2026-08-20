@@ -11,4 +11,6 @@ public interface StockRepository {
     int decreaseIfEnough(Long skuId, Integer quantity);
 
     void increase(Long skuId, Integer quantity);
+
+    int findQuantityBySkuId(Long skuId);
 }

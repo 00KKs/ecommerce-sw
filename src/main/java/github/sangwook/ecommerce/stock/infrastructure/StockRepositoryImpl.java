@@ -33,6 +33,11 @@ public class StockRepositoryImpl implements StockRepository {
         stockJpaRepository.increase(skuId, quantity);
     }
 
+    @Override
+    public int findQuantityBySkuId(Long skuId) {
+        return stockJpaRepository.findQuantityBySkuId(skuId);
+    }
+
     private Stock requireStock(Optional<Stock> stock, Long skuId) {
         return stock.orElseThrow(() -> new IllegalStateException("skuId=" + skuId + " 에 해당하는 Stock이 초기화되지 않았습니다.")); //FIXME 불변식 위반
     }

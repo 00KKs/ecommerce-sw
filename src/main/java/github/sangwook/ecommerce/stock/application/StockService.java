@@ -36,7 +36,9 @@ public class StockService {
     public void decreaseIfEnough(Long skuId, Integer quantity) {
         validateQuantityPositive(quantity);
         int updated = stockRepository.decreaseIfEnough(skuId, quantity);
-        if (updated == 0) throw new OutOfStockException(skuId);
+        if (updated == 0) {
+            throw new OutOfStockException(skuId, quantity, stockRepository.findQuantityBySkuId(skuId));
+        }
     }
 
     private void validateQuantityPositive(Integer quantity) {

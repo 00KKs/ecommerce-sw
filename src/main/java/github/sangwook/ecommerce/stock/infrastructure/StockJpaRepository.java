@@ -15,4 +15,6 @@ public interface StockJpaRepository extends JpaRepository<Stock, Long> {
     @Modifying
     @Query("update Stock s set s.quantity = s.quantity + :quantity where s.skuId = :skuId")
     void increase(@Param("skuId") Long skuId, @Param("quantity") Integer quantity);
+
+    int findQuantityBySkuId(Long skuId);
 }
