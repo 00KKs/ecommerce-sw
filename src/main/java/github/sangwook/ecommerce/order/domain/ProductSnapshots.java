@@ -26,4 +26,8 @@ public class ProductSnapshots {
             this.quantity = quantity;
         }
     }
+
+    public Integer calculateTotalPrice() {
+        return items.stream().mapToInt(item -> item.getUnitPrice() * item.getQuantity()).sum();
+    }
 }
