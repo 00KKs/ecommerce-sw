@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.order.application;
 
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
+import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse.AddressResponse;
 import github.sangwook.ecommerce.order.domain.AddressSnapshot;
 import github.sangwook.ecommerce.order.domain.Order;
 import github.sangwook.ecommerce.order.domain.OrderStatus;
@@ -9,8 +10,11 @@ import github.sangwook.ecommerce.order.domain.ProductSnapshots.ProductSnapshot;
 import github.sangwook.ecommerce.order.domain.ShippingAddress;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import github.sangwook.ecommerce.order.port.AddressPort;
+import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.ProductPort;
 import github.sangwook.ecommerce.order.port.StockPort;
+import github.sangwook.ecommerce.order.port.dto.PaymentResult;
+import github.sangwook.ecommerce.order.port.dto.PaymentResult.Result;
 import github.sangwook.ecommerce.stock.OutOfStockException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,10 +32,12 @@ public class OrderService {
     private final AddressPort addressPort;
     private final StockPort stockPort;
     private final ProductPort productPort;
+    private final PaymentPort paymentPort;
 
     private final OrderRepository orderRepository;
 
     private final TransactionTemplate transactionTemplate;
+
 
     public PlaceOrderResponse placeOrder(Long memberId, Long addressId, Map<Long, Integer> skuIdQuantityMap) {
         //배송지를 확인하고, 스냅샷을 가져온다
@@ -41,17 +47,18 @@ public class OrderService {
         ProductSnapshots productSnapshots = productPort.getProductSnapshots(skuIdQuantityMap);
 
         //재고를 줄인다
-        transactionTemplate.executeWithoutResult(status -> {
+        Order order = transactionTemplate.execute(status -> {
             try {
                 for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
                     stockPort.deduct(entry.getKey(), entry.getValue());
                 }
 
-                Order order = createOrder(productSnapshots, addressSnapshot);
-                orderRepository.save(order);
+                Order newOrder = createOrder(productSnapshots, addressSnapshot);
+                return orderRepository.save(newOrder);
 
             } catch (OutOfStockException e) {
-                log.warn("재고 부족으로 주문 실패 - memberId={}, skuId={}, 요청수량={}, 가용재고={}", memberId, e.getSkuId(), e.getRequestQuantity(), e.getAvailableQuantity());
+                log.warn("재고 부족으로 주문 실패 - memberId={}, skuId={}, 요청수량={}, 가용재고={}", memberId,
+                    e.getSkuId(), e.getRequestQuantity(), e.getAvailableQuantity());
                 throw new OrderFailedException(e);
             } catch (Exception e) {
                 throw new OrderFailedException(e);
@@ -61,13 +68,27 @@ public class OrderService {
         //일단 재고까지 줄이는 것에 성공하면 주문의 결제 대기 상태까지는 완료되었고 커밋하면됨 - 트랜잭션 1 종료
 
         //PG사에 결제 요청을 한다 - 트랜잭션 외부
+        PaymentResult paymentResult = paymentPort.processPayment(order.getId(), order.getTotalPrice());
 
-        //결제 완료
+        //TODO result 결과에 맞게 분기처리 필요, 현재는 성공 케이스만
+        Order confirmed = transactionTemplate.execute(status -> {
+            Order getOrder = getById(order.getId());
+            getOrder.confirm();
+            return orderRepository.save(getOrder);
+        });
 
-        //결제 정보 저장
-
-        //응답 반환
-        return null;
+        OrderDisplayStatus status = OrderDisplayStatus.FAILED;
+        if (confirmed.getStatus() == OrderStatus.CONFIRMED && paymentResult.getResult() == Result.SUCCESS) {
+            status = OrderDisplayStatus.CONFIRMED;
+        }
+        return new PlaceOrderResponse(
+            order.getId(),
+            status,
+            confirmed.getTotalPrice(),
+            paymentResult.getPaymentKey(),
+            confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
+            new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
+        );
     }
 
     private @NonNull Order createOrder(ProductSnapshots productSnapshots, AddressSnapshot addressSnapshot) {
@@ -86,5 +107,9 @@ public class OrderService {
             order.addOrderItem(item.getProductName(), item.getOptionName(), item.getUnitPrice(), item.getQuantity());
         }
         return order;
+    }
+
+    private Order getById(Long id) {
+        return orderRepository.findById(id).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
     }
 }
