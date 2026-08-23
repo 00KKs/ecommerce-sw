@@ -51,4 +51,8 @@ public class Order {
     public void addOrderItem(String productName, String optionName, Integer unitPrice, Integer quantity) {
         orderItems.add(new OrderItem(productName, optionName, unitPrice, quantity));
     }
+
+    public void confirm() {
+        this.status = OrderStatus.CONFIRMED;
+    }
 }
