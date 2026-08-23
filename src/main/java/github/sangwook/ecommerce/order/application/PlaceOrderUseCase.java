@@ -72,7 +72,7 @@ public class PlaceOrderUseCase {
 
         //TODO result 결과에 맞게 분기처리 필요, 현재는 성공 케이스만
         Order confirmed = transactionTemplate.execute(status -> {
-            Order getOrder = getById(order.getId());
+            Order getOrder = getByIdWithItems(order.getId());
             getOrder.confirm();
             return orderRepository.save(getOrder);
         });
@@ -109,7 +109,7 @@ public class PlaceOrderUseCase {
         return order;
     }
 
-    private Order getById(Long id) {
-        return orderRepository.findById(id).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
+    private Order getByIdWithItems(Long id) {
+        return orderRepository.findByIdWithItems(id).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
     }
 }
