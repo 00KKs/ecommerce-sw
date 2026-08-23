@@ -4,7 +4,7 @@ import github.sangwook.ecommerce.auth.LoginMember;
 import github.sangwook.ecommerce.auth.MemberSession;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderRequest;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
-import github.sangwook.ecommerce.order.application.OrderService;
+import github.sangwook.ecommerce.order.application.PlaceOrderUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +18,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderService orderService;
+    private final PlaceOrderUseCase placeOrderUseCase;
 
     @PostMapping("/api/v1/orders")
     public ResponseEntity<PlaceOrderResponse> placeOrder(@LoginMember MemberSession memberSession, @RequestBody PlaceOrderRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                orderService.placeOrder(
+                placeOrderUseCase.placeOrder(
                         memberSession.getId(),
                         request.getAddressId(),
                         Map.of(request.getSkuId(), request.getQuantity())

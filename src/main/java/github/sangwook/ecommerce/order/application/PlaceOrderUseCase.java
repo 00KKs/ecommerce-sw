@@ -27,7 +27,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderService {
+public class PlaceOrderUseCase {
 
     private final AddressPort addressPort;
     private final StockPort stockPort;
