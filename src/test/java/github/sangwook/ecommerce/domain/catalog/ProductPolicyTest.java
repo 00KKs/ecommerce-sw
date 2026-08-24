@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.catalog;
+package github.sangwook.ecommerce.domain.catalog;
 
 import github.sangwook.ecommerce.catalog.policy.ProductSalePolicy;
 import github.sangwook.ecommerce.catalog.domain.ProductSaleStatus;

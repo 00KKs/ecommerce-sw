@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.catalog.application;
 
+import github.sangwook.ecommerce.catalog.adapter.dto.ProductInfo;
 import github.sangwook.ecommerce.catalog.api.dto.ProductDetailResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductStatusResponse;
 import github.sangwook.ecommerce.catalog.api.dto.ProductSummaryResponse;
@@ -79,6 +80,12 @@ public class ProductService {
 
     public void validateExists(Long productId) {
         if (!productRepository.existsById(productId)) throw new IllegalStateException("상품을 찾을 수 없습니다.");
+    }
+
+    public ProductInfo getProductInfo(Long skuId) {
+        Sku sku = skuRepository.findById(skuId).orElseThrow(() -> new IllegalStateException("존재하지 않는 SKU입니다."));
+        Product product = getById(sku.getProductId());
+        return new ProductInfo(product.getName(), sku.getOptionName(), sku.getPrice());
     }
 
     private Product getById(Long id) {

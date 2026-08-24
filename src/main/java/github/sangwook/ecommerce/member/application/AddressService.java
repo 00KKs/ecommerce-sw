@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.member.application;
 
+import github.sangwook.ecommerce.member.adapter.dto.AddressInfo;
 import github.sangwook.ecommerce.member.api.dto.AddressResponse;
 import github.sangwook.ecommerce.member.domain.Address;
 import java.util.List;
@@ -24,8 +25,7 @@ public class AddressService {
 
     @Transactional
     public void update(Long memberId, Long addressId, String recipientName, String recipientPhone, String stringAddress, String deliveryRequest) {
-        Address address = addressRepository.findById(addressId).orElseThrow(() -> new IllegalStateException("배송지를 찾을 수 없습니다."));
-        if (!address.getMemberId().equals(memberId)) throw new IllegalStateException("권한이 없습니다.");
+        Address address = getByIdAndMemberId(addressId, memberId);
         address.update(recipientName, recipientPhone, stringAddress, deliveryRequest);
         addressRepository.save(address);
     }
@@ -33,9 +33,9 @@ public class AddressService {
     @Transactional(readOnly = true)
     public List<AddressResponse> getList(Long memberId) {
         return addressRepository.findAllByMemberId(memberId)
-            .stream()
-            .map(a -> new AddressResponse(a.getId(), a.getRecipientName(), a.getRecipientPhone(), a.getAddress(), a.getDeliveryRequest(), a.getIsDefault()))
-            .toList();
+                .stream()
+                .map(a -> new AddressResponse(a.getId(), a.getRecipientName(), a.getRecipientPhone(), a.getAddress(), a.getDeliveryRequest(), a.getIsDefault()))
+                .toList();
     }
 
     @Transactional
@@ -50,5 +50,14 @@ public class AddressService {
         AddressBook book = new AddressBook(addressRepository.findAllByMemberId(memberId));
         book.changeDefault(addressId);
         addressRepository.saveAll(book.getAddresses());
+    }
+
+    public AddressInfo getAddress(Long memberId, Long addressId) {
+        Address address = getByIdAndMemberId(addressId, memberId);
+        return new AddressInfo(address.getRecipientName(), address.getRecipientPhone(), address.getAddress(), address.getDeliveryRequest());
+    }
+
+    private Address getByIdAndMemberId(Long addressId, Long memberId) {
+        return addressRepository.findByIdAndMemberId(addressId, memberId).orElseThrow(() -> new IllegalStateException("배송지를 찾을 수 없습니다."));
     }
 }

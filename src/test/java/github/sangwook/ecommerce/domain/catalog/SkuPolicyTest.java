@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.catalog;
+package github.sangwook.ecommerce.domain.catalog;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

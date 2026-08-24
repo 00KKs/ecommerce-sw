@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.member;
+package github.sangwook.ecommerce.domain.member;
 
 import github.sangwook.ecommerce.member.application.MemberRepository;
 import github.sangwook.ecommerce.member.application.MemberService;

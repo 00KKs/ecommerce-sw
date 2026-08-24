@@ -13,4 +13,6 @@ public interface AddressRepository {
     Optional<Address> findById(Long id);
 
     void saveAll(List<Address> addresses);
+
+    Optional<Address> findByIdAndMemberId(Long addressId, Long memberId);
 }

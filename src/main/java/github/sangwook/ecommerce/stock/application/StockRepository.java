@@ -6,7 +6,11 @@ public interface StockRepository {
 
     Stock save(Stock stock);
 
-    Stock findStockWithWriteLock(Long skuId);
-
     Stock getStockOrThrow(Long skuId);
+
+    int decreaseIfEnough(Long skuId, Integer quantity);
+
+    void increase(Long skuId, Integer quantity);
+
+    int findQuantityBySkuId(Long skuId);
 }
