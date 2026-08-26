@@ -4,6 +4,8 @@ import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentGateway;
 import java.util.UUID;
+
+import github.sangwook.ecommerce.payment.infrastructure.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -14,15 +16,15 @@ class PaymentAdapter implements PaymentPort {
     private final PaymentService paymentService;
     private final PaymentGateway paymentGateway;
 
-    //결제에 대한 pg사 api 요청과, 멱등키 생성, 그 결과의 저장이 이루어진다
+    //이 요청 자체도 중복되어 들어올 수 있으므로 주문하기에서도 멱등성 보장이 필요하다
     @Override
     public PaymentResult processPayment(Long orderId, int amount) {
         String paymentKey = paymentGateway.initiatePayment(orderId, amount);
+        UUID paymentIdempotencyKey = UUID.randomUUID();
+        PaymentStatus paymentStatus = paymentGateway.confirmPayment(paymentKey, orderId, amount, paymentIdempotencyKey);
 
-        //pg 결제 요청
-        //멱등키 생성
-        //pg 결제 승인
-        //응답 반환
-        return new PaymentResult(UUID.randomUUID().toString());
+        //타임아웃 뜨면? 바로 재조회하여 결과 확인하기, 결과는 반드시 SUCCESS 또는 FAILED로 반환
+        PaymentResult.Result result = paymentStatus == PaymentStatus.DONE ? PaymentResult.Result.SUCCESS : PaymentResult.Result.FAILED; //FIXME
+        return new PaymentResult(paymentKey, result);
     }
 }

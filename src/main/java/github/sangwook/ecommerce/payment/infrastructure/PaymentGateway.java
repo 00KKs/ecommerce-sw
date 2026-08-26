@@ -4,10 +4,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 @Component
 public class PaymentGateway {
 
     private static final String PAYMENT_INITIATE_PATH = "/v1/payments";
+    private static final String PAYMENT_CONFIRM_PATH = "/v1/payments/confirm";
+
+    private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
 
     private final RestClient restClient;
 
@@ -34,6 +40,25 @@ public class PaymentGateway {
         return response.paymentKey;
     }
 
+    public PaymentStatus confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
+        PaymentConfirmResponse response;
+        try {
+            response = restClient
+                    .post()
+                    .uri(PAYMENT_CONFIRM_PATH)
+                    .header(IDEMPOTENCY_HEADER, idempotencyKey.toString())
+                    .body(new PaymentConfirmRequest(paymentKey, String.valueOf(orderId), amount))
+                    .retrieve()
+                    .body(PaymentConfirmResponse.class);
+        } catch (Exception e) {
+            throw new IllegalStateException("결제 승인 중 오류가 발생했습니다.");
+        }
+        if (response == null) throw new IllegalStateException("결제 승인 중 오류가 발생했습니다.");
+
+        //TODO 응답값 필드 검증
+        return PaymentStatus.valueOf(response.status);
+    }
+
     private record PaymentInitiateRequest(
         String orderId,
         int amount
@@ -44,5 +69,19 @@ public class PaymentGateway {
         String orderId,
         String status,
         int amount
+    ){}
+
+    private record PaymentConfirmRequest(
+        String paymentKey,
+        String orderId,
+        int amount
+    ){}
+
+    private record PaymentConfirmResponse(
+        String paymentKey,
+        String orderId,
+        String status,
+        int amount,
+        OffsetDateTime approvedAt
     ){}
 }
