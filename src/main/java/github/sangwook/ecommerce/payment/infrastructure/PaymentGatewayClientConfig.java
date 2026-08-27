@@ -17,7 +17,7 @@ public class PaymentGatewayClientConfig {
 
         return RestClient.builder()
             .requestFactory(factory)
-            .baseUrl("http://localhost:9090");
+            .baseUrl("http://pg:9090");
     }
 
 }
