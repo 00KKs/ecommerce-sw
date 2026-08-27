@@ -2,7 +2,6 @@ package github.sangwook.ecommerce.payment;
 
 import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
-import github.sangwook.ecommerce.payment.infrastructure.PaymentGateway;
 import java.util.UUID;
 
 import github.sangwook.ecommerce.payment.infrastructure.PaymentStatus;
