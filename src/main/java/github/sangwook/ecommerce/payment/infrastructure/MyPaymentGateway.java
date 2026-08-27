@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
+import github.sangwook.ecommerce.payment.PaymentGateway;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -8,7 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Component
-public class PaymentGateway {
+public class MyPaymentGateway implements PaymentGateway {
 
     private static final String PAYMENT_INITIATE_PATH = "/v1/payments";
     private static final String PAYMENT_CONFIRM_PATH = "/v1/payments/confirm";
@@ -17,10 +18,11 @@ public class PaymentGateway {
 
     private final RestClient restClient;
 
-    public PaymentGateway(@Qualifier("PaymentGatewayRestClientBuilder") RestClient.Builder builder) {
+    public MyPaymentGateway(@Qualifier("PaymentGatewayRestClientBuilder") RestClient.Builder builder) {
         this.restClient = builder.build();
     }
 
+    @Override
     public String initiatePayment(Long orderId, Integer amount) {
         PaymentInitiateResponse response;
         try {
@@ -40,6 +42,7 @@ public class PaymentGateway {
         return response.paymentKey;
     }
 
+    @Override
     public PaymentStatus confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
         PaymentConfirmResponse response;
         try {
