@@ -5,13 +5,15 @@ import lombok.Getter;
 @Getter
 public class PaymentResult {
     private final String paymentKey;
-    private final Result result = Result.SUCCESS;
+    private final Result result;
 
-    public PaymentResult(String paymentKey) {
+    public PaymentResult(String paymentKey, Result result) {
         this.paymentKey = paymentKey;
+        this.result = result;
     }
 
     public enum Result {
-        SUCCESS
+        SUCCESS,
+        FAILED
     }
 }

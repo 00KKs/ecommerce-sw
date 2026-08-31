@@ -5,7 +5,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgresdata:/var/lib/postgresql/data
     environment:
       - "POSTGRES_USER=postgres"
       - "POSTGRES_PASSWORD=1234"
@@ -25,5 +25,14 @@ services:
     ports:
       - "8080:8080"
 
+  pg:
+    image: eclipse-temurin:21-jre
+    container_name: pg
+    volumes:
+      - ./pg/pg-0.0.1-SNAPSHOT.jar:/app/pg.jar
+    command: ["java", "-jar", "/app/pg.jar"]
+    ports:
+      - "9090:9090"
+
 volumes:
-  pgdata:
+  postgresdata:

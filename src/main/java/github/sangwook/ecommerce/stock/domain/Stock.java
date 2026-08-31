@@ -21,7 +21,6 @@ public class Stock {
     }
 
     public Stock(Long skuId, Integer quantity) {
-        validateQuantityPositive(quantity);
         this.skuId = skuId;
         this.quantity = quantity;
     }

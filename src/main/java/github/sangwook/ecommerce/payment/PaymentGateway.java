@@ -1,8 +1,12 @@
 package github.sangwook.ecommerce.payment;
 
-import org.springframework.stereotype.Component;
+import github.sangwook.ecommerce.payment.infrastructure.PaymentStatus;
+import java.util.UUID;
 
-@Component
-public class PaymentGateway {
+public interface PaymentGateway {
+
+    String initiatePayment(Long orderId, Integer amount);
+
+    PaymentStatus confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey);
 
 }
