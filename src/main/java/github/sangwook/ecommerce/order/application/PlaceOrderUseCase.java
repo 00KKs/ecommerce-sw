@@ -2,27 +2,23 @@ package github.sangwook.ecommerce.order.application;
 
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse.AddressResponse;
-import github.sangwook.ecommerce.order.domain.AddressSnapshot;
-import github.sangwook.ecommerce.order.domain.Order;
-import github.sangwook.ecommerce.order.domain.OrderStatus;
-import github.sangwook.ecommerce.order.domain.ProductSnapshots;
+import github.sangwook.ecommerce.order.domain.*;
 import github.sangwook.ecommerce.order.domain.ProductSnapshots.ProductSnapshot;
-import github.sangwook.ecommerce.order.domain.ShippingAddress;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import github.sangwook.ecommerce.order.port.AddressPort;
 import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.ProductPort;
 import github.sangwook.ecommerce.order.port.StockPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
-import github.sangwook.ecommerce.order.port.dto.PaymentResult.Result;
 import github.sangwook.ecommerce.stock.OutOfStockException;
-import java.util.Map;
-import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.Map;
+import java.util.Map.Entry;
 
 @Service
 @RequiredArgsConstructor
@@ -68,27 +64,32 @@ public class PlaceOrderUseCase {
         //일단 재고까지 줄이는 것에 성공하면 주문의 결제 대기 상태까지는 완료되었고 커밋하면됨 - 트랜잭션 1 종료
 
         //PG사에 결제 요청을 한다 - 트랜잭션 외부
+
         PaymentResult paymentResult = paymentPort.processPayment(order.getId(), order.getTotalPrice());
+        switch (paymentResult) {
+            case PaymentResult.SUCCESS(String paymentKey) -> {
+                Order confirmed = transactionTemplate.execute(status -> {
+                    Order getOrder = getByIdWithItems(order.getId());
+                    getOrder.confirm();
+                    return orderRepository.save(getOrder);
+                });
 
-        //TODO result 결과에 맞게 분기처리 필요, 현재는 성공 케이스만
-        Order confirmed = transactionTemplate.execute(status -> {
-            Order getOrder = getByIdWithItems(order.getId());
-            getOrder.confirm();
-            return orderRepository.save(getOrder);
-        });
+                return new PlaceOrderResponse(
+                        order.getId(),
+                        OrderDisplayStatus.CONFIRMED,
+                        confirmed.getTotalPrice(),
+                        paymentKey,
+                        confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
+                        new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
+                );
+            }
 
-        OrderDisplayStatus status = OrderDisplayStatus.FAILED;
-        if (confirmed.getStatus() == OrderStatus.CONFIRMED && paymentResult.getResult() == Result.SUCCESS) {
-            status = OrderDisplayStatus.CONFIRMED;
+            case PaymentResult.FAILED() -> {
+                //재고 되돌리기
+                return null;
+            }
         }
-        return new PlaceOrderResponse(
-            order.getId(),
-            status,
-            confirmed.getTotalPrice(),
-            paymentResult.getPaymentKey(),
-            confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
-            new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
-        );
+
     }
 
     private @NonNull Order createOrder(ProductSnapshots productSnapshots, AddressSnapshot addressSnapshot) {
