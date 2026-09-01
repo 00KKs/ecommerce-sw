@@ -1,6 +1,8 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
+import github.sangwook.ecommerce.payment.PaymentConfirmResult;
 import github.sangwook.ecommerce.payment.PaymentGateway;
+import github.sangwook.ecommerce.payment.PaymentInitiateResult;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -23,7 +25,7 @@ public class MyPaymentGateway implements PaymentGateway {
     }
 
     @Override
-    public String initiatePayment(Long orderId, Integer amount) {
+    public PaymentInitiateResult initiatePayment(Long orderId, Integer amount) {
         PaymentInitiateResponse response;
         try {
             response = restClient
@@ -39,11 +41,11 @@ public class MyPaymentGateway implements PaymentGateway {
         if (response == null) throw new IllegalStateException("결제 요청 중 오류가 발생했습니다.");
 
         //TODO amount 일치 여부, orderId 소유권/상태, status가 정말 READY인지 검증
-        return response.paymentKey;
+        return new PaymentInitiateResult.SUCCESS(response.paymentKey);
     }
 
     @Override
-    public PaymentStatus confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
+    public PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
         PaymentConfirmResponse response;
         try {
             response = restClient
@@ -59,7 +61,7 @@ public class MyPaymentGateway implements PaymentGateway {
         if (response == null) throw new IllegalStateException("결제 승인 중 오류가 발생했습니다.");
 
         //TODO 응답값 필드 검증
-        return PaymentStatus.valueOf(response.status);
+        return new PaymentConfirmResult.SUCCESS();
     }
 
     private record PaymentInitiateRequest(

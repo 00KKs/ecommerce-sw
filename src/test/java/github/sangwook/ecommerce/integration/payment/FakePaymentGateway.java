@@ -1,20 +1,22 @@
 package github.sangwook.ecommerce.integration.payment;
 
+import github.sangwook.ecommerce.payment.PaymentConfirmResult;
 import github.sangwook.ecommerce.payment.PaymentGateway;
-import github.sangwook.ecommerce.payment.infrastructure.PaymentStatus;
-import java.util.UUID;
+import github.sangwook.ecommerce.payment.PaymentInitiateResult;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 public class FakePaymentGateway implements PaymentGateway {
 
     @Override
-    public String initiatePayment(Long orderId, Integer amount) {
-        return UUID.randomUUID().toString();
+    public PaymentInitiateResult initiatePayment(Long orderId, Integer amount) {
+        return new PaymentInitiateResult.SUCCESS(UUID.randomUUID().toString());
     }
 
     @Override
-    public PaymentStatus confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
-        return PaymentStatus.DONE;
+    public PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
+        return new PaymentConfirmResult.SUCCESS();
     }
 }
