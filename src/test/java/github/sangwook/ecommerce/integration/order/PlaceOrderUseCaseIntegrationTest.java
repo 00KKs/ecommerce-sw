@@ -21,7 +21,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 
 @SpringBootTest
-@Import(FakePaymentGatewayConfig.class)
 class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
