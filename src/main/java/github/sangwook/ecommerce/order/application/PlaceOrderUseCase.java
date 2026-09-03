@@ -86,6 +86,18 @@ public class PlaceOrderUseCase {
 
             case PaymentResult.PAYMENT_FAILED() -> {
                 //재고 되돌리기
+                transactionTemplate.executeWithoutResult(status -> {
+                    for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
+                        stockPort.recover(entry.getKey(), entry.getValue());
+                    }
+
+                    Order failedOrder = getByIdWithItems(order.getId());
+                    failedOrder.paymentFailed();
+                    orderRepository.save(failedOrder);
+                });
+
+                //잔액 부족으로 인한 실패인지, PG사의 일시적인 오류로 인한 실패인지 구분
+
                 return null;
             }
 
