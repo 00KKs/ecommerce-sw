@@ -21,4 +21,9 @@ class StockAdapter implements StockInitializer, StockPort {
     public void deduct(Long skuId, Integer quantity) {
         stockService.decreaseIfEnough(skuId, quantity);
     }
+
+    @Override
+    public void recover(Long skuId, Integer quantity) {
+        stockService.inbound(skuId, quantity);
+    }
 }
