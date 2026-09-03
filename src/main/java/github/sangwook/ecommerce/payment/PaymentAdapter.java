@@ -32,7 +32,7 @@ class PaymentAdapter implements PaymentPort {
                 return new PaymentResult.FAILED();
             }
             case PaymentInitiateResult.UNKNOWN(Throwable cause) -> {
-                return new PaymentResult.FAILED();
+                return new PaymentResult.UNKNOWN();
             }
         }
 
@@ -48,7 +48,7 @@ class PaymentAdapter implements PaymentPort {
                 return new PaymentResult.FAILED();
             }
             case PaymentConfirmResult.UNKNOWN(Throwable cause) -> {
-                return new PaymentResult.FAILED();
+                return new PaymentResult.UNKNOWN();
             }
         }
     }

@@ -88,6 +88,12 @@ public class PlaceOrderUseCase {
                 //재고 되돌리기
                 return null;
             }
+
+            case PaymentResult.UNKNOWN() -> {
+                //응답 반환
+                //주문 성공여부 확인, 여부에 맞게 처리
+                return null;
+            }
         }
 
     }
