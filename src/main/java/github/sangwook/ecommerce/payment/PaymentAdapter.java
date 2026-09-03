@@ -29,7 +29,7 @@ class PaymentAdapter implements PaymentPort {
         switch (paymentGateway.initiatePayment(orderId, amount)) {
             case PaymentInitiateResult.SUCCESS(String key) -> paymentKey = key;
             case PaymentInitiateResult.FAILED(String reasonCode, String reasonMessage) -> {
-                return new PaymentResult.FAILED();
+                return new PaymentResult.PAYMENT_FAILED();
             }
             case PaymentInitiateResult.UNKNOWN(Throwable cause) -> {
                 return new PaymentResult.UNKNOWN();
@@ -45,7 +45,7 @@ class PaymentAdapter implements PaymentPort {
                 return new PaymentResult.SUCCESS(paymentKey);
             }
             case PaymentConfirmResult.FAILED(String reasonCode, String reasonMessage) -> {
-                return new PaymentResult.FAILED();
+                return new PaymentResult.PAYMENT_FAILED();
             }
             case PaymentConfirmResult.UNKNOWN(Throwable cause) -> {
                 return new PaymentResult.UNKNOWN();

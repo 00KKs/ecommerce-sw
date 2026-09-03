@@ -84,7 +84,7 @@ public class PlaceOrderUseCase {
                 );
             }
 
-            case PaymentResult.FAILED() -> {
+            case PaymentResult.PAYMENT_FAILED() -> {
                 //재고 되돌리기
                 return null;
             }
