@@ -1,4 +1,7 @@
-package github.sangwook.ecommerce.payment;
+package github.sangwook.ecommerce.payment.application;
+
+import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
+import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
 
 import java.util.UUID;
 

@@ -1,8 +1,8 @@
 package github.sangwook.ecommerce.integration.payment;
 
-import github.sangwook.ecommerce.payment.PaymentConfirmResult;
-import github.sangwook.ecommerce.payment.PaymentGateway;
-import github.sangwook.ecommerce.payment.PaymentInitiateResult;
+import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
+import github.sangwook.ecommerce.payment.application.PaymentGateway;
+import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;

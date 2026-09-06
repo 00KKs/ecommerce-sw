@@ -1,8 +1,6 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
-import github.sangwook.ecommerce.payment.PaymentConfirmResult;
-import github.sangwook.ecommerce.payment.PaymentGateway;
-import github.sangwook.ecommerce.payment.PaymentInitiateResult;
+import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;

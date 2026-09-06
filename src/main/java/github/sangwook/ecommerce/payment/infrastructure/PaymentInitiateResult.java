@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.payment;
+package github.sangwook.ecommerce.payment.infrastructure;
 
 public sealed interface PaymentInitiateResult {
 

@@ -1,9 +1,13 @@
-package github.sangwook.ecommerce.payment;
+package github.sangwook.ecommerce.payment.adapter;
 
 import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
 import java.util.UUID;
 
+import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
+import github.sangwook.ecommerce.payment.application.PaymentGateway;
+import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
+import github.sangwook.ecommerce.payment.application.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
