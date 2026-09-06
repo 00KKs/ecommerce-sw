@@ -84,24 +84,42 @@ public class PlaceOrderUseCase {
                 );
             }
 
-            case PaymentResult.PAYMENT_FAILED() -> {
+            case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage) -> {
                 //재고 되돌리기
-                transactionTemplate.executeWithoutResult(status -> {
+                Order failed = transactionTemplate.execute(status -> {
                     for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
                         stockPort.recover(entry.getKey(), entry.getValue());
                     }
 
                     Order failedOrder = getByIdWithItems(order.getId());
                     failedOrder.paymentFailed();
-                    orderRepository.save(failedOrder);
+                    return orderRepository.save(failedOrder);
                 });
 
-                //잔액 부족으로 인한 실패인지, PG사의 일시적인 오류로 인한 실패인지 구분
-
-                return null;
+                switch (stage) {
+                    case PaymentResult.PaymentFailedStage.PAYMENT_INITIATE() -> {
+                        return new PlaceOrderResponse(
+                                order.getId(),
+                                OrderDisplayStatus.FAILED,
+                                failed.getTotalPrice(),
+                                null, //실패 단계에 따라 paymentKey가 있을수도 없을수도 있다.
+                                failed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
+                                new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
+                        );
+                    }
+                    case PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(String paymentKey) -> {
+                        return new PlaceOrderResponse(
+                                order.getId(),
+                                OrderDisplayStatus.FAILED,
+                                failed.getTotalPrice(),
+                                paymentKey,
+                                failed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
+                                new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
+                        );
+                    }
+                }
             }
         }
-
     }
 
     private @NonNull Order createOrder(ProductSnapshots productSnapshots, AddressSnapshot addressSnapshot) {

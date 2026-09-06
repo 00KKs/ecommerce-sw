@@ -27,10 +27,10 @@ class PaymentAdapter implements PaymentPort {
             case PaymentInitiateResult.SUCCESS(String key) -> paymentKey = key;
             case PaymentInitiateResult.FAILED(String reasonCode, String reasonMessage) -> {
                 //재시도
-                return new PaymentResult.PAYMENT_FAILED();
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE());
             }
             case PaymentInitiateResult.UNKNOWN(Throwable cause) -> {
-                return new PaymentResult.PAYMENT_FAILED();
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE());
             }
         }
 
@@ -45,11 +45,11 @@ class PaymentAdapter implements PaymentPort {
             }
             case PaymentConfirmResult.FAILED(String reasonCode, String reasonMessage) -> {
                 paymentService.aborted(paymentId);
-                return new PaymentResult.PAYMENT_FAILED();
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey));
             }
             case PaymentConfirmResult.UNKNOWN(Throwable cause) -> {
                 //재확인 후 기록
-                return new PaymentResult.PAYMENT_FAILED();
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey));
             }
         }
     }
