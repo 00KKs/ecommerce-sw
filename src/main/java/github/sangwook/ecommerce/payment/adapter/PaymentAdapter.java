@@ -2,6 +2,7 @@ package github.sangwook.ecommerce.payment.adapter;
 
 import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
+import github.sangwook.ecommerce.order.port.dto.PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM;
 import java.util.UUID;
 
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
@@ -9,8 +10,10 @@ import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
 import github.sangwook.ecommerce.payment.application.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 class PaymentAdapter implements PaymentPort {
@@ -37,9 +40,13 @@ class PaymentAdapter implements PaymentPort {
         UUID paymentIdempotencyKey = UUID.randomUUID();
         Long paymentId = paymentService.ready(orderId, amount, paymentKey, paymentIdempotencyKey);
 
-        //결제 대기 상태 저장
         switch (paymentGateway.confirmPayment(paymentKey, orderId, amount, paymentIdempotencyKey)) {
-            case PaymentConfirmResult.SUCCESS() -> {
+            case PaymentConfirmResult.SUCCESS(Long paymentOrderId, int paymentAmount) -> {
+                if (!paymentOrderId.equals(orderId) || paymentAmount != amount) {
+                    log.error("PG 응답 값 불일치. orderId 기대={}, 실제={}, amount 기대={}, 실제={}", orderId, paymentOrderId, amount, paymentAmount);
+                    paymentService.aborted(paymentId);
+                    return new PaymentResult.PAYMENT_FAILED(new PAYMENT_CONFIRM(paymentKey));
+                }
                 paymentService.success(paymentId);
                 return new PaymentResult.SUCCESS(paymentKey);
             }
