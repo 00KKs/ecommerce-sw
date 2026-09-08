@@ -36,13 +36,9 @@ public class PlaceOrderUseCase {
 
 
     public PlaceOrderResponse placeOrder(Long memberId, Long addressId, Map<Long, Integer> skuIdQuantityMap) {
-        //배송지를 확인하고, 스냅샷을 가져온다
         AddressSnapshot addressSnapshot = addressPort.getAddressSnapshot(memberId, addressId);
-
-        //상품 정보의 스냅샷을 가져온다
         ProductSnapshots productSnapshots = productPort.getProductSnapshots(skuIdQuantityMap);
 
-        //재고를 줄인다
         Order order = transactionTemplate.execute(status -> {
             try {
                 for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
@@ -60,10 +56,6 @@ public class PlaceOrderUseCase {
                 throw new OrderFailedException(e);
             }
         });
-
-        //일단 재고까지 줄이는 것에 성공하면 주문의 결제 대기 상태까지는 완료되었고 커밋하면됨 - 트랜잭션 1 종료
-
-        //PG사에 결제 요청을 한다 - 트랜잭션 외부
 
         PaymentResult paymentResult = paymentPort.processPayment(order.getId(), order.getTotalPrice());
         switch (paymentResult) {
@@ -85,7 +77,7 @@ public class PlaceOrderUseCase {
             }
 
             case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage) -> {
-                //재고 되돌리기
+                //TODO 재시도가 가능하냐 아니냐에 따라 order를 PAYMENT_PENDING으로 둘지 FAILED로 둘지 결정
                 Order failed = transactionTemplate.execute(status -> {
                     for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
                         stockPort.recover(entry.getKey(), entry.getValue());
