@@ -12,11 +12,11 @@ public class FakePaymentGatewayConfig {
     @Bean
     @Primary
     public PaymentGateway fakePaymentGateway(
-        @Value("${fake.payment.scenario:SUCCESS}") String scenario) {
-        return switch (scenario) {
-            case "ALWAYS_FAIL" -> new FakePaymentGatewayAlwaysFail();
-            case "TIMEOUT" -> new FakePaymentGatewayTimeout();
-            default -> new FakePaymentGatewaySuccess();
-        };
+        @Value("${fake.payment.initiate:SUCCESS}") String initiateScenario,
+        @Value("${fake.payment.confirm:SUCCESS}") String confirmScenario) {
+        return new ComposableFakePaymentGateway(
+            InitiateScenario.valueOf(initiateScenario),
+            ConfirmScenario.valueOf(confirmScenario)
+        );
     }
 }
