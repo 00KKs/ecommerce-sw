@@ -123,5 +123,62 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
 
     }
 
+    @Nested
+    class 결제_기록_확인_테스트 {
+
+        @Nested
+        @TestPropertySource(properties = {
+            "fake.payment.initiate=ALWAYS_FAIL",
+            "fake.payment.confirm=SUCCESS"
+        })
+        class 결제_요청_실패 {
+
+            @Test
+            @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+            @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+            @DisplayName("PG사 결제 요청 실패 시 Payment를 저장하지 않는다.")
+            void doesNotSavePayment() {
+                Long memberId = 1L;
+                Long addressId = 1L;
+                Map<Long, Integer> orderItems = Map.of(100L, 2);
+
+                PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.FAILED);
+
+                Integer paymentCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM payment WHERE order_id = ?",
+                    Integer.class,
+                    response.orderId());
+                assertThat(paymentCount).isEqualTo(0);
+            }
+        }
+
+        @Nested
+        @TestPropertySource(properties = {
+            "fake.payment.initiate=SUCCESS",
+            "fake.payment.confirm=ALWAYS_FAIL"
+        })
+        class 결제_승인_실패 {
+
+            @Test
+            @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+            @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+            @DisplayName("PG사 결제 승인 실패 시 Payment를 ABORTED 상태로 저장한다.")
+            void savesFailedPayment() {
+                Long memberId = 1L;
+                Long addressId = 1L;
+                Map<Long, Integer> orderItems = Map.of(100L, 2);
+
+                PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.FAILED);
+
+                Map<String, Object> payment = jdbcTemplate.queryForMap("SELECT * FROM payment WHERE order_id = ?", response.orderId());
+                assertThat(payment.get("payment_status")).isEqualTo("ABORTED");
+            }
+        }
+    }
+
 
 }
