@@ -6,7 +6,6 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import github.sangwook.ecommerce.integration.AbstractIntegrationTest;
-import github.sangwook.ecommerce.integration.payment.FakePaymentGatewayConfig;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
 import github.sangwook.ecommerce.order.application.OrderDisplayStatus;
 import github.sangwook.ecommerce.order.application.PlaceOrderUseCase;
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 
