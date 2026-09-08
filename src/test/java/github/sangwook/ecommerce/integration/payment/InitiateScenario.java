@@ -12,7 +12,7 @@ public enum InitiateScenario {
     ALWAYS_FAIL {
         @Override
         PaymentInitiateResult apply(Long orderId, Integer amount) {
-            return new PaymentInitiateResult.FAILED("CARD_DECLINED", "카드 승인이 거절되었습니다.");
+            return new PaymentInitiateResult.FAILED("CARD_DECLINED", "카드 승인이 거절되었습니다.", false);
         }
     },
     TIMEOUT {

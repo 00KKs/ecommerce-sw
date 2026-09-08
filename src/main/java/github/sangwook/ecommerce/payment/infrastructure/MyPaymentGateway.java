@@ -46,7 +46,7 @@ public class MyPaymentGateway implements PaymentGateway {
                     }))
                     .body(PaymentInitiateResponse.class);
         } catch (PaymentGatewayClientError e) {
-            return new PaymentInitiateResult.FAILED(e.code, e.message);
+            return new PaymentInitiateResult.FAILED(e.code, e.message, false);
         }
 
         if (initiateResponse == null) throw new IllegalStateException("결제 요청 중 오류가 발생했습니다.");
@@ -75,7 +75,7 @@ public class MyPaymentGateway implements PaymentGateway {
                     }))
                     .body(PaymentConfirmResponse.class);
         } catch (PaymentGatewayClientError e) {
-            return new PaymentConfirmResult.FAILED(e.code, e.message);
+            return new PaymentConfirmResult.FAILED(e.code, e.message, false);
         } catch (PaymentGatewayServerError e) {
             log.error("PG사 서버 오류 발생. status={}, body={}", e.getStatusCode(), e.getBody());
             //재시도 가능

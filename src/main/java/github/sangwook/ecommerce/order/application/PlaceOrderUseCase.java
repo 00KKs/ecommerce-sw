@@ -76,8 +76,19 @@ public class PlaceOrderUseCase {
                 );
             }
 
-            case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage) -> {
-                //TODO 재시도가 가능하냐 아니냐에 따라 order를 PAYMENT_PENDING으로 둘지 FAILED로 둘지 결정
+            case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage, boolean retryable) -> {
+                if (retryable) { //재시도 가능한 실패 시 사용자의 재결제를 유도한다
+                    Order failed = getByIdWithItems(order.getId());
+                    return new PlaceOrderResponse(
+                        failed.getId(),
+                        OrderDisplayStatus.PAYMENT_PENDING,
+                        failed.getTotalPrice(),
+                        null,
+                        failed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
+                        new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
+                    );
+                }
+
                 Order failed = transactionTemplate.execute(status -> {
                     for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
                         stockPort.recover(entry.getKey(), entry.getValue());

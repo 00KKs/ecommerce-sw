@@ -28,12 +28,12 @@ class PaymentAdapter implements PaymentPort {
         String paymentKey;
         switch (paymentGateway.initiatePayment(orderId, amount)) {
             case PaymentInitiateResult.SUCCESS(String key) -> paymentKey = key;
-            case PaymentInitiateResult.FAILED(String reasonCode, String reasonMessage) -> {
+            case PaymentInitiateResult.FAILED(String reasonCode, String reasonMessage, boolean retryable) -> {
                 //재시도
-                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE());
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), retryable);
             }
             case PaymentInitiateResult.UNKNOWN(Throwable cause) -> {
-                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE());
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), false);
             }
         }
 
@@ -45,18 +45,18 @@ class PaymentAdapter implements PaymentPort {
                 if (!paymentOrderId.equals(orderId) || paymentAmount != amount) {
                     log.error("PG 응답 값 불일치. orderId 기대={}, 실제={}, amount 기대={}, 실제={}", orderId, paymentOrderId, amount, paymentAmount);
                     paymentService.aborted(paymentId);
-                    return new PaymentResult.PAYMENT_FAILED(new PAYMENT_CONFIRM(paymentKey));
+                    return new PaymentResult.PAYMENT_FAILED(new PAYMENT_CONFIRM(paymentKey), false);
                 }
                 paymentService.success(paymentId);
                 return new PaymentResult.SUCCESS(paymentKey);
             }
-            case PaymentConfirmResult.FAILED(String reasonCode, String reasonMessage) -> {
+            case PaymentConfirmResult.FAILED(String reasonCode, String reasonMessage, boolean retryable) -> {
                 paymentService.aborted(paymentId);
-                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey));
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), retryable);
             }
             case PaymentConfirmResult.UNKNOWN(Throwable cause) -> {
                 //재확인 후 기록
-                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey));
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false);
             }
         }
     }
