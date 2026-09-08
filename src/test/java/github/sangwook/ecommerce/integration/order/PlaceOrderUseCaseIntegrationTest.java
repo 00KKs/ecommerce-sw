@@ -12,10 +12,12 @@ import github.sangwook.ecommerce.order.application.PlaceOrderUseCase;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 @SpringBootTest
@@ -27,39 +29,99 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Test
-    @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
-    @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-    @DisplayName("재고가 충분하면 주문이 생성되고 결제 성공 후 확정된다")
-    void placeOrder_success() {
-        Long memberId = 1L;
-        Long addressId = 1L;
-        Map<Long, Integer> orderItems = Map.of(100L, 2);
+    @Nested
+    class 재고_부족_주문_실패_테스트 {
+        @Test
+        @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+        @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+        @DisplayName("재고가 충분하면 주문이 생성되고 결제 성공 후 확정된다")
+        void placeOrder_success() {
+            Long memberId = 1L;
+            Long addressId = 1L;
+            Map<Long, Integer> orderItems = Map.of(100L, 2);
 
-        PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+            PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
 
-        assertThat(response.orderId()).isNotNull();
-        assertThat(response.status()).isEqualTo(OrderDisplayStatus.CONFIRMED);
-        assertThat(response.paymentKey()).isNotNull();
-        assertThat(response.items()).hasSize(1);
-        assertThat(response.totalPrice()).isEqualTo(40000);
+            assertThat(response.orderId()).isNotNull();
+            assertThat(response.status()).isEqualTo(OrderDisplayStatus.CONFIRMED);
+            assertThat(response.paymentKey()).isNotNull();
+            assertThat(response.items()).hasSize(1);
+            assertThat(response.totalPrice()).isEqualTo(40000);
 
-        Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
-        assertThat(remaining).isEqualTo(8);
+            Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
+            assertThat(remaining).isEqualTo(8);
+        }
+
+        @Test
+        @DisplayName("재고가 부족하면 주문 실패 예외가 발생하고 재고가 차감되지 않는다")
+        @Sql(scripts = "/test-data/out-of-stock.sql", executionPhase = BEFORE_TEST_METHOD)
+        @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+        void placeOrder_outOfStock() {
+            Long memberId = 1L;
+            Long addressId = 1L;
+            Map<Long, Integer> orderItems = Map.of(100L, 5);
+
+            assertThatThrownBy(() -> placeOrderUseCase.placeOrder(memberId, addressId, orderItems)).isInstanceOf(OrderFailedException.class);
+
+            Integer stock = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
+            assertThat(stock).isEqualTo(1);
+        }
     }
 
-    @Test
-    @DisplayName("재고가 부족하면 주문 실패 예외가 발생하고 재고가 차감되지 않는다")
-    @Sql(scripts = "/test-data/out-of-stock.sql", executionPhase = BEFORE_TEST_METHOD)
-    @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-    void placeOrder_outOfStock() {
-        Long memberId = 1L;
-        Long addressId = 1L;
-        Map<Long, Integer> orderItems = Map.of(100L, 5);
+    @Nested
+    class 재고_복원_확인_테스트 {
 
-        assertThatThrownBy(() -> placeOrderUseCase.placeOrder(memberId, addressId, orderItems)).isInstanceOf(OrderFailedException.class);
+        @Nested
+        @TestPropertySource(properties = {
+            "fake.payment.initiate=ALWAYS_FAIL",
+            "fake.payment.confirm=SUCCESS"
+        })
+        class 결제_요청_실패 {
 
-        Integer stock = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
-        assertThat(stock).isEqualTo(1);
+            @Test
+            @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+            @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+            @DisplayName("PG사 결제 요청 실패 시 재고를 복원한다.")
+            void restoreStock() {
+                Long memberId = 1L;
+                Long addressId = 1L;
+                Map<Long, Integer> orderItems = Map.of(100L, 2);
+
+                PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.FAILED);
+
+                Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
+                assertThat(remaining).isEqualTo(10);
+            }
+        }
+
+        @Nested
+        @TestPropertySource(properties = {
+            "fake.payment.initiate=SUCCESS",
+            "fake.payment.confirm=ALWAYS_FAIL"
+        })
+        class 결제_승인_실패 {
+
+            @Test
+            @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+            @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+            @DisplayName("PG사 결제 승인 실패 시 재고를 복원한다.")
+            void restoreStock() {
+                Long memberId = 1L;
+                Long addressId = 1L;
+                Map<Long, Integer> orderItems = Map.of(100L, 2);
+
+                PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.FAILED);
+
+                Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
+                assertThat(remaining).isEqualTo(10);
+            }
+        }
+
     }
+
+
 }
