@@ -180,5 +180,58 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
+    @Nested
+    class 재고_보류_확인_테스트 {
+
+        @Nested
+        @TestPropertySource(properties = "fake.payment.initiate=RETRYABLE_FAILURE")
+        class 결제_요청_일시적_실패 {
+
+            @Test
+            @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+            @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+            @DisplayName("재시도 가능한 요청 실패 시 재고는 복원되지 않고 계속 보류된다")
+            void holdStock() {
+                Long memberId = 1L;
+                Long addressId = 1L;
+                Map<Long, Integer> orderItems = Map.of(100L, 2);
+
+                PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+
+                assertThat(response.paymentKey()).isNull();
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.PAYMENT_PENDING);
+
+                Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
+                assertThat(remaining).isEqualTo(8);
+            }
+        }
+
+        @Nested
+        @TestPropertySource(properties = {
+            "fake.payment.initiate=SUCCESS",
+            "fake.payment.confirm=RETRYABLE_FAILURE"
+        })
+        class 결제_승인_일시적_실패 {
+
+            @Test
+            @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+            @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+            @DisplayName("재시도 가능한 승인 실패 시 재고는 복원되지 않고 계속 보류된다")
+            void holdStock() {
+                Long memberId = 1L;
+                Long addressId = 1L;
+                Map<Long, Integer> orderItems = Map.of(100L, 2);
+
+                PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+
+                assertThat(response.paymentKey()).isNotNull();
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.PAYMENT_PENDING);
+
+                Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
+                assertThat(remaining).isEqualTo(8);
+            }
+        }
+    }
+
 
 }
