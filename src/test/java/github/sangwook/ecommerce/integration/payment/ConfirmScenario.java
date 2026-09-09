@@ -13,7 +13,13 @@ public enum ConfirmScenario {
     ALWAYS_FAIL {
         @Override
         PaymentConfirmResult apply(String paymentKey, Long orderId, int amount) {
-            return new PaymentConfirmResult.FAILED("PAYMENT_REJECTED", "결제가 거절되었습니다.", true);
+            return new PaymentConfirmResult.FAILED("PAYMENT_REJECTED", "결제가 거절되었습니다.", false);
+        }
+    },
+    RETRYABLE_FAILURE {
+        @Override
+        PaymentConfirmResult apply(String paymentKey, Long orderId, int amount) {
+            return new PaymentConfirmResult.FAILED("PROVIDER_ERROR", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", true);
         }
     },
     TIMEOUT {
