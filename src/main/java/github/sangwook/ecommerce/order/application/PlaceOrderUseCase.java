@@ -57,70 +57,42 @@ public class PlaceOrderUseCase {
             }
         });
 
-        PaymentResult paymentResult = paymentPort.processPayment(order.getId(), order.getTotalPrice());
+        Long orderId = order.getId();
+        PaymentResult paymentResult = paymentPort.processPayment(orderId, order.getTotalPrice());
         switch (paymentResult) {
             case PaymentResult.SUCCESS(String paymentKey) -> {
                 Order confirmed = transactionTemplate.execute(status -> {
-                    Order getOrder = getByIdWithItems(order.getId());
+                    Order getOrder = getByIdWithItems(orderId);
                     getOrder.confirm();
                     return orderRepository.save(getOrder);
                 });
 
                 return new PlaceOrderResponse(
-                        order.getId(),
-                        OrderDisplayStatus.CONFIRMED,
-                        confirmed.getTotalPrice(),
-                        paymentKey,
-                        confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
-                        new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
+                    orderId,
+                    OrderDisplayStatus.CONFIRMED,
+                    confirmed.getTotalPrice(),
+                    paymentKey,
+                    confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
+                    new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
                 );
             }
 
             case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage, boolean retryable) -> {
-                if (retryable) { //재시도 가능한 실패 시 사용자의 재결제를 유도한다
-                    Order failed = getByIdWithItems(order.getId());
-                    return new PlaceOrderResponse(
-                        failed.getId(),
-                        OrderDisplayStatus.PAYMENT_PENDING,
-                        failed.getTotalPrice(),
-                        null,
-                        failed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
-                        new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
-                    );
+                OrderDisplayStatus orderStatus = retryable ? OrderDisplayStatus.PAYMENT_PENDING : OrderDisplayStatus.FAILED;
+
+                if (!retryable) {
+                    transactionTemplate.execute(status -> {
+                        for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
+                            stockPort.recover(entry.getKey(), entry.getValue());
+                        }
+
+                        Order failedOrder = getByIdWithItems(orderId);
+                        failedOrder.paymentFailed();
+                        return orderRepository.save(failedOrder);
+                    });
                 }
 
-                Order failed = transactionTemplate.execute(status -> {
-                    for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
-                        stockPort.recover(entry.getKey(), entry.getValue());
-                    }
-
-                    Order failedOrder = getByIdWithItems(order.getId());
-                    failedOrder.paymentFailed();
-                    return orderRepository.save(failedOrder);
-                });
-
-                switch (stage) {
-                    case PaymentResult.PaymentFailedStage.PAYMENT_INITIATE() -> {
-                        return new PlaceOrderResponse(
-                                order.getId(),
-                                OrderDisplayStatus.FAILED,
-                                failed.getTotalPrice(),
-                                null, //실패 단계에 따라 paymentKey가 있을수도 없을수도 있다.
-                                failed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
-                                new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
-                        );
-                    }
-                    case PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(String paymentKey) -> {
-                        return new PlaceOrderResponse(
-                                order.getId(),
-                                OrderDisplayStatus.FAILED,
-                                failed.getTotalPrice(),
-                                paymentKey,
-                                failed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
-                                new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
-                        );
-                    }
-                }
+                return buildFailedResponse(order, orderStatus, stage, addressSnapshot);
             }
         }
     }
@@ -145,5 +117,28 @@ public class PlaceOrderUseCase {
 
     private Order getByIdWithItems(Long id) {
         return orderRepository.findByIdWithItems(id).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
+    }
+
+    private PlaceOrderResponse buildFailedResponse(Order order, OrderDisplayStatus status, PaymentResult.PaymentFailedStage stage, AddressSnapshot addressSnapshot) {
+        String paymentKey = switch (stage) {
+            case PaymentResult.PaymentFailedStage.PAYMENT_INITIATE ignored -> null;
+            case PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(String key) -> key;
+        };
+
+        return new PlaceOrderResponse(
+            order.getId(),
+            status,
+            order.getTotalPrice(),
+            paymentKey,
+            order.getOrderItems().stream()
+                .map(oi -> new PlaceOrderResponse.ItemResponse(
+                    oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity()))
+                .toList(),
+            new AddressResponse(
+                addressSnapshot.getRecipientName(),
+                addressSnapshot.getRecipientPhone(),
+                addressSnapshot.getAddress(),
+                addressSnapshot.getDeliveryRequest())
+        );
     }
 }
