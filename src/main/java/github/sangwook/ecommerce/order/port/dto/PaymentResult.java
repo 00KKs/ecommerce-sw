@@ -1,19 +1,11 @@
 package github.sangwook.ecommerce.order.port.dto;
 
-import lombok.Getter;
+public sealed interface PaymentResult {
+    record PAYMENT_FAILED(PaymentFailedStage stage, boolean retryable) implements PaymentResult {}
+    record SUCCESS(String paymentKey) implements PaymentResult {}
 
-@Getter
-public class PaymentResult {
-    private final String paymentKey;
-    private final Result result;
-
-    public PaymentResult(String paymentKey, Result result) {
-        this.paymentKey = paymentKey;
-        this.result = result;
-    }
-
-    public enum Result {
-        SUCCESS,
-        FAILED
+    sealed interface PaymentFailedStage {
+        record PAYMENT_INITIATE() implements PaymentFailedStage {}
+        record PAYMENT_CONFIRM(String paymentKey) implements  PaymentFailedStage {}
     }
 }

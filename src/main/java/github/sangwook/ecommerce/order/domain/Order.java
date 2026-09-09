@@ -55,4 +55,8 @@ public class Order {
     public void confirm() {
         this.status = OrderStatus.CONFIRMED;
     }
+
+    public void paymentFailed() {
+        this.status = OrderStatus.PAYMENT_FAILED;
+    }
 }

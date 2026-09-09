@@ -2,27 +2,23 @@ package github.sangwook.ecommerce.order.application;
 
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse.AddressResponse;
-import github.sangwook.ecommerce.order.domain.AddressSnapshot;
-import github.sangwook.ecommerce.order.domain.Order;
-import github.sangwook.ecommerce.order.domain.OrderStatus;
-import github.sangwook.ecommerce.order.domain.ProductSnapshots;
+import github.sangwook.ecommerce.order.domain.*;
 import github.sangwook.ecommerce.order.domain.ProductSnapshots.ProductSnapshot;
-import github.sangwook.ecommerce.order.domain.ShippingAddress;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import github.sangwook.ecommerce.order.port.AddressPort;
 import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.ProductPort;
 import github.sangwook.ecommerce.order.port.StockPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
-import github.sangwook.ecommerce.order.port.dto.PaymentResult.Result;
 import github.sangwook.ecommerce.stock.OutOfStockException;
-import java.util.Map;
-import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.Map;
+import java.util.Map.Entry;
 
 @Service
 @RequiredArgsConstructor
@@ -40,13 +36,9 @@ public class PlaceOrderUseCase {
 
 
     public PlaceOrderResponse placeOrder(Long memberId, Long addressId, Map<Long, Integer> skuIdQuantityMap) {
-        //배송지를 확인하고, 스냅샷을 가져온다
         AddressSnapshot addressSnapshot = addressPort.getAddressSnapshot(memberId, addressId);
-
-        //상품 정보의 스냅샷을 가져온다
         ProductSnapshots productSnapshots = productPort.getProductSnapshots(skuIdQuantityMap);
 
-        //재고를 줄인다
         Order order = transactionTemplate.execute(status -> {
             try {
                 for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
@@ -65,30 +57,44 @@ public class PlaceOrderUseCase {
             }
         });
 
-        //일단 재고까지 줄이는 것에 성공하면 주문의 결제 대기 상태까지는 완료되었고 커밋하면됨 - 트랜잭션 1 종료
+        Long orderId = order.getId();
+        PaymentResult paymentResult = paymentPort.processPayment(orderId, order.getTotalPrice());
+        switch (paymentResult) {
+            case PaymentResult.SUCCESS(String paymentKey) -> {
+                Order confirmed = transactionTemplate.execute(status -> {
+                    Order getOrder = getByIdWithItems(orderId);
+                    getOrder.confirm();
+                    return orderRepository.save(getOrder);
+                });
 
-        //PG사에 결제 요청을 한다 - 트랜잭션 외부
-        PaymentResult paymentResult = paymentPort.processPayment(order.getId(), order.getTotalPrice());
+                return new PlaceOrderResponse(
+                    orderId,
+                    OrderDisplayStatus.CONFIRMED,
+                    confirmed.getTotalPrice(),
+                    paymentKey,
+                    confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
+                    new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
+                );
+            }
 
-        //TODO result 결과에 맞게 분기처리 필요, 현재는 성공 케이스만
-        Order confirmed = transactionTemplate.execute(status -> {
-            Order getOrder = getByIdWithItems(order.getId());
-            getOrder.confirm();
-            return orderRepository.save(getOrder);
-        });
+            case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage, boolean retryable) -> {
+                OrderDisplayStatus orderStatus = retryable ? OrderDisplayStatus.PAYMENT_PENDING : OrderDisplayStatus.FAILED;
 
-        OrderDisplayStatus status = OrderDisplayStatus.FAILED;
-        if (confirmed.getStatus() == OrderStatus.CONFIRMED && paymentResult.getResult() == Result.SUCCESS) {
-            status = OrderDisplayStatus.CONFIRMED;
+                if (!retryable) {
+                    transactionTemplate.execute(status -> {
+                        for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
+                            stockPort.recover(entry.getKey(), entry.getValue());
+                        }
+
+                        Order failedOrder = getByIdWithItems(orderId);
+                        failedOrder.paymentFailed();
+                        return orderRepository.save(failedOrder);
+                    });
+                }
+
+                return buildFailedResponse(order, orderStatus, stage, addressSnapshot);
+            }
         }
-        return new PlaceOrderResponse(
-            order.getId(),
-            status,
-            confirmed.getTotalPrice(),
-            paymentResult.getPaymentKey(),
-            confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
-            new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
-        );
     }
 
     private @NonNull Order createOrder(ProductSnapshots productSnapshots, AddressSnapshot addressSnapshot) {
@@ -111,5 +117,28 @@ public class PlaceOrderUseCase {
 
     private Order getByIdWithItems(Long id) {
         return orderRepository.findByIdWithItems(id).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
+    }
+
+    private PlaceOrderResponse buildFailedResponse(Order order, OrderDisplayStatus status, PaymentResult.PaymentFailedStage stage, AddressSnapshot addressSnapshot) {
+        String paymentKey = switch (stage) {
+            case PaymentResult.PaymentFailedStage.PAYMENT_INITIATE ignored -> null;
+            case PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(String key) -> key;
+        };
+
+        return new PlaceOrderResponse(
+            order.getId(),
+            status,
+            order.getTotalPrice(),
+            paymentKey,
+            order.getOrderItems().stream()
+                .map(oi -> new PlaceOrderResponse.ItemResponse(
+                    oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity()))
+                .toList(),
+            new AddressResponse(
+                addressSnapshot.getRecipientName(),
+                addressSnapshot.getRecipientPhone(),
+                addressSnapshot.getAddress(),
+                addressSnapshot.getDeliveryRequest())
+        );
     }
 }
