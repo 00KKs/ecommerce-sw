@@ -104,6 +104,13 @@ public class MyPaymentGateway implements PaymentGateway {
         return new PaymentConfirmResult.SUCCESS(Long.valueOf(confirmResponse.orderId), confirmResponse.amount);
     }
 
+    @Override
+    public void findPayment(String paymentKey) {
+        //결제 내역 자체가 없는지 -> 재시도 안전
+        //결제가 실패로 처리되었는지 -> 재시도 X, 새로운 결제 요청 생성 필요
+        //결제가 성공으로 처리되었는지 -> 재시도 X, 결과 동기화
+    }
+
     private PaymentInitiateResult handleInitiateResourceAccessException(ResourceAccessException e) {
         Throwable cause = e.getCause();
         if (cause instanceof ConnectTimeoutException || cause instanceof ConnectException) {

@@ -11,4 +11,6 @@ public interface PaymentGateway {
 
     PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey);
 
+    void findPayment(String paymentKey);
+
 }

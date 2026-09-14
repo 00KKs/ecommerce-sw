@@ -56,6 +56,7 @@ class PaymentAdapter implements PaymentPort {
             }
             case PaymentConfirmResult.UNKNOWN(Throwable cause) -> {
                 //재확인 후 기록
+                paymentGateway.findPayment(paymentKey);
                 return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false);
             }
         }

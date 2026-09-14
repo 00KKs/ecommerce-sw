@@ -24,4 +24,9 @@ public class ComposableFakePaymentGateway implements PaymentGateway {
     public PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
         return confirmScenario.apply(paymentKey, orderId, amount);
     }
+
+    @Override
+    public void findPayment(String paymentKey) {
+
+    }
 }
