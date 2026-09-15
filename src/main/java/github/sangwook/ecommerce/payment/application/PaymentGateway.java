@@ -3,6 +3,7 @@ package github.sangwook.ecommerce.payment.application;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
 
+import github.sangwook.ecommerce.payment.infrastructure.PaymentLookupResult;
 import java.util.UUID;
 
 public interface PaymentGateway {
@@ -11,6 +12,6 @@ public interface PaymentGateway {
 
     PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey);
 
-    void findPayment(String paymentKey);
+    PaymentLookupResult lookupPayment(String paymentKey);
 
 }

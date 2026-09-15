@@ -1,7 +1,18 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
+import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.CONNECTION_ABORTED;
+import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.CONNECTION_POOL_EXHAUSTED;
+import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.CONNECTION_REFUSED;
+import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.UNCLASSIFIED_IO_ERROR;
+
 import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import github.sangwook.ecommerce.payment.exception.PaymentConfirmAmbiguousException;
+import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.ConnectTimeoutException;
@@ -12,15 +23,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
-
-import java.net.ConnectException;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.*;
 
 @Component
 @Slf4j
@@ -105,10 +107,23 @@ public class MyPaymentGateway implements PaymentGateway {
     }
 
     @Override
-    public void findPayment(String paymentKey) {
-        //결제 내역 자체가 없는지 -> 재시도 안전
-        //결제가 실패로 처리되었는지 -> 재시도 X, 새로운 결제 요청 생성 필요
-        //결제가 성공으로 처리되었는지 -> 재시도 X, 결과 동기화
+    public PaymentLookupResult lookupPayment(String paymentKey) {
+        PaymentLookupResponse response = null;
+        try {
+            response = restClient
+                .get()
+                .uri("/{paymentKey}", paymentKey)
+                .retrieve()
+                .body(PaymentLookupResponse.class);
+        } catch (ResourceAccessException e) {
+            log.error("I/O 오류 발생. cause={}", e.getCause(), e);
+        } catch (Exception e) {
+            log.error("결제 조회 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
+            throw new IllegalStateException("결제 조회 중 오류가 발생했습니다.");
+        }
+
+        if (response == null) return new PaymentLookupResult.NOT_FOUND();
+        return PaymentLookupResponseMapper.toResult(response);
     }
 
     private PaymentInitiateResult handleInitiateResourceAccessException(ResourceAccessException e) {
