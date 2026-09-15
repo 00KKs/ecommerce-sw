@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.payment.domain;
+package github.sangwook.ecommerce.payment;
 
 public enum PaymentStatus {
     READY,

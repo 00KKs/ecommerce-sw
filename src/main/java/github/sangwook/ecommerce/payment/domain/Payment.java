@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.payment.domain;
 
+import github.sangwook.ecommerce.payment.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 
