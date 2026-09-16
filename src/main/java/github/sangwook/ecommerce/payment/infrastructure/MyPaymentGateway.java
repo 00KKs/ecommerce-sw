@@ -112,7 +112,7 @@ public class MyPaymentGateway implements PaymentGateway {
         try {
             response = restClient
                 .get()
-                .uri("/{paymentKey}", paymentKey)
+                .uri("/v1/payments/{paymentKey}", paymentKey)
                 .retrieve()
                 .body(PaymentLookupResponse.class);
         } catch (ResourceAccessException e) {
