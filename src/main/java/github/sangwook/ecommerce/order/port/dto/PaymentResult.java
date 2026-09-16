@@ -3,6 +3,7 @@ package github.sangwook.ecommerce.order.port.dto;
 public sealed interface PaymentResult {
     record PAYMENT_FAILED(PaymentFailedStage stage, boolean retryable) implements PaymentResult {}
     record SUCCESS(String paymentKey) implements PaymentResult {}
+    record PAYMENT_UNKNOWN(String paymentKey) implements PaymentResult {}
 
     sealed interface PaymentFailedStage {
         record PAYMENT_INITIATE() implements PaymentFailedStage {}

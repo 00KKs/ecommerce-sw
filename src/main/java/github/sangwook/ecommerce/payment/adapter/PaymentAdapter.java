@@ -74,13 +74,13 @@ class PaymentAdapter implements PaymentPort {
                     }
                     case PaymentLookupResult.NOT_FOUND() -> {
                         log.info("재확인 결과 PG에 내역 없음. paymentKey={}", paymentKey);
-                        paymentService.aborted(paymentId); //TODO 재검토 필요
-                        return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), true);
+                        paymentService.unknown(paymentId);
+                        return new PaymentResult.PAYMENT_UNKNOWN(paymentKey);
                     }
                     case PaymentLookupResult.READY() -> {
                         log.info("재확인 결과 아직 미승인. paymentKey={}", paymentKey);
-                        paymentService.aborted(paymentId);
-                        return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), true);
+                        paymentService.unknown(paymentId);
+                        return new PaymentResult.PAYMENT_UNKNOWN(paymentKey);
                     }
                     case PaymentLookupResult.CANCELED(int canceledAmount, OffsetDateTime approvedAt, OffsetDateTime canceledAt) -> {
                         log.error("예상치 못한 상태(CANCELED) 확인. 수동 확인 필요. paymentKey={}, approvedAt={}, canceledAt={}", paymentKey, approvedAt, canceledAt);
