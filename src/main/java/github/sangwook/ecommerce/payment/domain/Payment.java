@@ -3,7 +3,9 @@ package github.sangwook.ecommerce.payment.domain;
 import github.sangwook.ecommerce.payment.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -31,6 +33,13 @@ public class Payment {
     @Column(name = "idempotency_key", nullable = false, updatable = false)
     private UUID idempotencyKey;
 
+    @Column(name = "check_count")
+    private int checkCount;
+
+    @Setter
+    @Column(name = "next_check_at")
+    private OffsetDateTime nextCheckAt;
+
     protected Payment() {
     }
 
@@ -40,6 +49,8 @@ public class Payment {
         this.paymentKey = paymentKey;
         this.paymentStatus = PaymentStatus.READY;
         this.idempotencyKey = idempotencyKey;
+        this.checkCount = 0;
+        this.nextCheckAt = null;
     }
 
     public void approve() {
@@ -51,7 +62,15 @@ public class Payment {
         this.paymentStatus = PaymentStatus.ABORTED;
     }
 
-    public void markAsUnknown() {
+    public void markAsUnknown(OffsetDateTime nextCheckAt) {
+        this.nextCheckAt = nextCheckAt;
         this.paymentStatus = PaymentStatus.UNKNOWN;
     }
+
+    public boolean incrementCheckCount() {
+        if (checkCount >= 4) return false;
+        checkCount++;
+        return true;
+    }
+
 }
