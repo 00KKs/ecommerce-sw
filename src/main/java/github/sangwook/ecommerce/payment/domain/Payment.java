@@ -50,4 +50,8 @@ public class Payment {
     public void aborted() {
         this.paymentStatus = PaymentStatus.ABORTED;
     }
+
+    public void markAsUnknown() {
+        this.paymentStatus = PaymentStatus.UNKNOWN;
+    }
 }
