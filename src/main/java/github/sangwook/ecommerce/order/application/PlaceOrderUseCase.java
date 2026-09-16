@@ -11,6 +11,7 @@ import github.sangwook.ecommerce.order.port.ProductPort;
 import github.sangwook.ecommerce.order.port.StockPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
 import github.sangwook.ecommerce.stock.OutOfStockException;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -66,20 +67,11 @@ public class PlaceOrderUseCase {
                     getOrder.confirm();
                     return orderRepository.save(getOrder);
                 });
-
-                return new PlaceOrderResponse(
-                    orderId,
-                    OrderDisplayStatus.CONFIRMED,
-                    confirmed.getTotalPrice(),
-                    paymentKey,
-                    confirmed.getOrderItems().stream().map(oi -> new PlaceOrderResponse.ItemResponse(oi.getProductName(), oi.getOptionName(), oi.getUnitPrice(), oi.getQuantity())).toList(),
-                    new AddressResponse(addressSnapshot.getRecipientName(), addressSnapshot.getRecipientPhone(), addressSnapshot.getAddress(),addressSnapshot.getDeliveryRequest())
-                );
+                return buildResponse(confirmed, paymentKey, OrderDisplayStatus.CONFIRMED, addressSnapshot);
             }
 
             case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage, boolean retryable) -> {
-                OrderDisplayStatus orderStatus = retryable ? OrderDisplayStatus.PAYMENT_PENDING : OrderDisplayStatus.FAILED;
-
+                OrderDisplayStatus orderStatus = retryable ? OrderDisplayStatus.PENDING_CONFIRMATION : OrderDisplayStatus.FAILED;
                 if (!retryable) {
                     transactionTemplate.execute(status -> {
                         for (Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
@@ -91,8 +83,12 @@ public class PlaceOrderUseCase {
                         return orderRepository.save(failedOrder);
                     });
                 }
-
                 return buildFailedResponse(order, orderStatus, stage, addressSnapshot);
+            }
+
+            case PaymentResult.PAYMENT_UNKNOWN(String paymentKey) -> {
+                OrderDisplayStatus orderStatus = OrderDisplayStatus.PENDING_CONFIRMATION;
+                return buildResponse(order, paymentKey, orderStatus, addressSnapshot);
             }
         }
     }
@@ -125,6 +121,10 @@ public class PlaceOrderUseCase {
             case PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(String key) -> key;
         };
 
+        return buildResponse(order, paymentKey, status, addressSnapshot);
+    }
+
+    private PlaceOrderResponse buildResponse(Order order, @Nullable String paymentKey, OrderDisplayStatus status, AddressSnapshot addressSnapshot) {
         return new PlaceOrderResponse(
             order.getId(),
             status,
