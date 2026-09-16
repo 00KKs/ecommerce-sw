@@ -199,7 +199,7 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
                 PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
 
                 assertThat(response.paymentKey()).isNull();
-                assertThat(response.status()).isEqualTo(OrderDisplayStatus.PAYMENT_PENDING);
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.PENDING_CONFIRMATION);
 
                 Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
                 assertThat(remaining).isEqualTo(8);
@@ -225,7 +225,7 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
                 PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
 
                 assertThat(response.paymentKey()).isNotNull();
-                assertThat(response.status()).isEqualTo(OrderDisplayStatus.PAYMENT_PENDING);
+                assertThat(response.status()).isEqualTo(OrderDisplayStatus.PENDING_CONFIRMATION);
 
                 Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
                 assertThat(remaining).isEqualTo(8);
