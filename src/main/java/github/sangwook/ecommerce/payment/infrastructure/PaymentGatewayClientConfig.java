@@ -32,7 +32,7 @@ public class PaymentGatewayClientConfig {
 
         RequestConfig requestConfig = RequestConfig.custom()
             .setConnectionRequestTimeout(Timeout.ofSeconds(3)) //풀에서 커넥션 획득 대기 시간
-            .setResponseTimeout(Timeout.ofSeconds(5)) //요청을 모두 보낸 후, 서버로부터의 응답이 오기까지의 시간
+            .setResponseTimeout(Timeout.ofSeconds(30)) //요청을 모두 보낸 후, 서버로부터의 응답이 오기까지의 시간
             .build();
 
         CloseableHttpClient httpClient = HttpClients.custom()
