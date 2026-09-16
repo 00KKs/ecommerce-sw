@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -12,6 +13,7 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final PaymentLookupRetryPolicy paymentLookupRetryPolicy;
 
     @Transactional
     public Long ready(Long orderId, int amount, String paymentKey, UUID idempotencyKey) {
@@ -37,7 +39,8 @@ public class PaymentService {
     @Transactional
     public void unknown(Long paymentId) {
         Payment payment = getById(paymentId);
-        payment.markAsUnknown();
+        OffsetDateTime nextCheckAt = OffsetDateTime.now().plusSeconds(paymentLookupRetryPolicy.nextDelaySeconds(0));
+        payment.markAsUnknown(nextCheckAt);
         paymentRepository.save(payment);
     }
 
