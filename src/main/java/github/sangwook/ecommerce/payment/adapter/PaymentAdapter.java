@@ -7,12 +7,11 @@ import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import github.sangwook.ecommerce.payment.application.PaymentService;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
-import github.sangwook.ecommerce.payment.infrastructure.PaymentLookupResult;
-import java.time.OffsetDateTime;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -33,7 +32,7 @@ class PaymentAdapter implements PaymentPort {
                 //재시도
                 return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), retryable);
             }
-            case PaymentInitiateResult.UNKNOWN(Throwable cause) -> {
+            case PaymentInitiateResult.UNKNOWN() -> {
                 return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), false);
             }
         }
@@ -55,7 +54,7 @@ class PaymentAdapter implements PaymentPort {
                 paymentService.aborted(paymentId);
                 return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), retryable);
             }
-            case PaymentConfirmResult.UNKNOWN(Throwable cause) -> {
+            case PaymentConfirmResult.UNKNOWN() -> {
                 paymentService.unknown(paymentId);
                 return new PaymentResult.PAYMENT_UNKNOWN(paymentKey);
             }

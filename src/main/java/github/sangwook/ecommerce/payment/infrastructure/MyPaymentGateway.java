@@ -1,18 +1,6 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
-import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.CONNECTION_ABORTED;
-import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.CONNECTION_POOL_EXHAUSTED;
-import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.CONNECTION_REFUSED;
-import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.UNCLASSIFIED_IO_ERROR;
-
 import github.sangwook.ecommerce.payment.application.PaymentGateway;
-import github.sangwook.ecommerce.payment.exception.PaymentConfirmAmbiguousException;
-import java.net.ConnectException;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.ConnectTimeoutException;
@@ -23,6 +11,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
+
+import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.*;
 
 @Component
 @Slf4j
@@ -99,8 +96,8 @@ public class MyPaymentGateway implements PaymentGateway {
         }
 
         if (confirmResponse == null) {
-            log.error("PG 응답 null. 승인 성공 여부 불명확. paymentKey={}, orderId={}", paymentKey, orderId);
-            return new PaymentConfirmResult.UNKNOWN(new PaymentConfirmAmbiguousException("PG 응답 바디가 비어있어 승인 결과를 확인할 수 없습니다. paymentKey=" + paymentKey));
+            log.error("PG 응답 바디 비어있음. 승인 성공 여부 불명확. paymentKey={}, orderId={}", paymentKey, orderId);
+            return new PaymentConfirmResult.UNKNOWN();
         }
 
         return new PaymentConfirmResult.SUCCESS(Long.valueOf(confirmResponse.orderId), confirmResponse.amount);
@@ -138,7 +135,7 @@ public class MyPaymentGateway implements PaymentGateway {
             return new PaymentInitiateResult.FAILED(CONNECTION_POOL_EXHAUSTED, true); //지연이 필요하다를 추가해도 좋을 듯
         } else if (cause instanceof SocketTimeoutException) {
             log.error("응답 지연, 결제 요청 상태 불명, cause={}", cause.getClass().getName(), e);
-            return new PaymentInitiateResult.UNKNOWN(cause);
+            return new PaymentInitiateResult.UNKNOWN();
         } else if (cause instanceof SocketException) {
             //닫힌 소켓에 연결을 시도하거나, 상대방이 연결을 갑자기 끊은 경우
             log.error("소켓 예외, 연결이 예기치 않게 종료. cause={}", cause.getClass().getName(), e);
@@ -161,16 +158,16 @@ public class MyPaymentGateway implements PaymentGateway {
             return new PaymentConfirmResult.FAILED(CONNECTION_POOL_EXHAUSTED, true);
         } else if (cause instanceof SocketTimeoutException) {
             //연결은 가능, 응답을 주지 않거나 지연
-            log.error("응답 지연, 결제 승인 상태 불명");
+            log.error("응답 지연, 결제 승인 상태 불명", e);
             //결제 승인 상태 확인 필요
-            return new PaymentConfirmResult.UNKNOWN(cause);
+            return new PaymentConfirmResult.UNKNOWN();
         } else if (cause instanceof SocketException) {
             //닫힌 소켓에 연결을 시도하거나, 상대방이 연결을 갑자기 끊은 경우
             log.error("소켓 예외, 연결이 예기치 않게 종료. cause={}", cause.getClass().getName(), e);
-            return new PaymentConfirmResult.UNKNOWN(cause);
+            return new PaymentConfirmResult.UNKNOWN();
         } else {
             log.error("미분류 I/O 오류 발생. cause={}", cause.getClass().getName(), e);
-            return new PaymentConfirmResult.UNKNOWN(cause);
+            return new PaymentConfirmResult.UNKNOWN();
         }
     }
 

@@ -2,8 +2,6 @@ package github.sangwook.ecommerce.integration.payment;
 
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
 
-import java.net.SocketTimeoutException;
-
 public enum ConfirmScenario {
     SUCCESS {
         @Override
@@ -26,7 +24,7 @@ public enum ConfirmScenario {
     TIMEOUT {
         @Override
         PaymentConfirmResult apply(String paymentKey, Long orderId, int amount) {
-            return new PaymentConfirmResult.UNKNOWN(new SocketTimeoutException());
+            return new PaymentConfirmResult.UNKNOWN();
         }
     };
 

@@ -9,5 +9,5 @@ public sealed interface PaymentConfirmResult {
             this(reason.getCode(), reason.getMessage(), retryable);
         }
     }
-    record UNKNOWN(Throwable cause) implements PaymentConfirmResult {}
+    record UNKNOWN() implements PaymentConfirmResult {}
 }

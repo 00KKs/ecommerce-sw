@@ -205,4 +205,27 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
             assertThat(remaining).isEqualTo(8);
         }
     }
+
+    @Nested
+    @TestPropertySource(properties = {
+            "fake.payment.initiate=SUCCESS",
+            "fake.payment.confirm=TIMEOUT"
+    })
+    class 결제_승인_타임아웃_케이스 {
+
+        @Test
+        @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
+        @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
+        @DisplayName("결제 타임아웃 발생 시 응답으로 PAYMENT_PENDING 상태가 반환된다")
+        void paymentPendingResponse() {
+            Long memberId = 1L;
+            Long addressId = 1L;
+            Map<Long, Integer> orderItems = Map.of(100L, 2);
+
+            PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
+
+            assertThat(response.paymentKey()).isNotNull();
+            assertThat(response.status()).isEqualTo(OrderDisplayStatus.PENDING_CONFIRMATION);
+        }
+    }
 }

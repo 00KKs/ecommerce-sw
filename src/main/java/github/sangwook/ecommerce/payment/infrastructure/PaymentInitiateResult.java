@@ -10,6 +10,6 @@ public sealed interface PaymentInitiateResult {
             this(reason.getCode(), reason.getMessage(), retryable);
         }
     }
-    record UNKNOWN(Throwable cause) implements PaymentInitiateResult {}
+    record UNKNOWN() implements PaymentInitiateResult {}
 
 }
