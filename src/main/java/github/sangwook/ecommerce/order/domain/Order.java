@@ -48,8 +48,8 @@ public class Order {
         this.shippingAddress = shippingAddress;
     }
 
-    public void addOrderItem(String productName, String optionName, Integer unitPrice, Integer quantity) {
-        orderItems.add(new OrderItem(productName, optionName, unitPrice, quantity));
+    public void addOrderItem(Long skuId, String productName, String optionName, Integer unitPrice, Integer quantity) {
+        orderItems.add(new OrderItem(skuId, productName, optionName, unitPrice, quantity));
     }
 
     public void confirm() {

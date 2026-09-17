@@ -15,22 +15,26 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "product_name")
+    @Column(name = "sku_id", nullable = false)
+    private Long skuId;
+
+    @Column(name = "product_name", nullable = false)
     private String productName;
 
-    @Column(name = "option_name")
+    @Column(name = "option_name", nullable = false)
     private String optionName;
 
-    @Column(name = "unit_price")
+    @Column(name = "unit_price", nullable = false)
     private Integer unitPrice;
 
-    @Column(name = "quantity")
+    @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
     protected OrderItem() {
     }
 
-    public OrderItem(String productName, String optionName, Integer unitPrice, Integer quantity) {
+    public OrderItem(Long skuId, String productName, String optionName, Integer unitPrice, Integer quantity) {
+        this.skuId = skuId;
         this.productName = productName;
         this.optionName = optionName;
         this.unitPrice = unitPrice;

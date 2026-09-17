@@ -85,7 +85,7 @@ public class ProductService {
     public ProductInfo getProductInfo(Long skuId) {
         Sku sku = skuRepository.findById(skuId).orElseThrow(() -> new IllegalStateException("존재하지 않는 SKU입니다."));
         Product product = getById(sku.getProductId());
-        return new ProductInfo(product.getName(), sku.getOptionName(), sku.getPrice());
+        return new ProductInfo(sku.getId(), product.getName(), sku.getOptionName(), sku.getPrice());
     }
 
     private Product getById(Long id) {

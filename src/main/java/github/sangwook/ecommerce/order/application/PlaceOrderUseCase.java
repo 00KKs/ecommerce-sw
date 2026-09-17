@@ -106,7 +106,7 @@ public class PlaceOrderUseCase {
         );
 
         for (ProductSnapshot item : productSnapshots.getItems()) {
-            order.addOrderItem(item.getProductName(), item.getOptionName(), item.getUnitPrice(), item.getQuantity());
+            order.addOrderItem(item.getSkuId(), item.getProductName(), item.getOptionName(), item.getUnitPrice(), item.getQuantity());
         }
         return order;
     }

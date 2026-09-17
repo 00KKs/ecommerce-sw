@@ -21,7 +21,7 @@ class ProductAdapter implements ProductPort {
         List<ProductSnapshots.ProductSnapshot> items = new ArrayList<>();
         for (Map.Entry<Long, Integer> entry : skuIdQuantityMap.entrySet()) {
             ProductInfo info = productService.getProductInfo(entry.getKey());
-            items.add(new ProductSnapshots.ProductSnapshot(info.getProductName(), info.getOptionName(), info.getUnitPrice(), entry.getValue()));
+            items.add(new ProductSnapshots.ProductSnapshot(info.getSkuId(), info.getProductName(), info.getOptionName(), info.getUnitPrice(), entry.getValue()));
         }
         return new ProductSnapshots(items);
     }
