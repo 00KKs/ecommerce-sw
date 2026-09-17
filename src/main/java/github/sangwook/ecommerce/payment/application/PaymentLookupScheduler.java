@@ -31,7 +31,7 @@ public class PaymentLookupScheduler {
         payments.forEach(this::lookup);
     }
 
-    //FIXME PaymentAdapter와 중복된 코드, jitter로 backoff 조정을 하지만 결국 요청을 한꺼번에 보내는 구조: RateLimiter 검토 가능
+    //FIXME: jitter로 backoff 조정을 하지만 결국 요청을 한꺼번에 보내는 구조: RateLimiter 검토 가능
     private void lookup(Payment payment) {
         Long paymentId = payment.getId();
         String paymentKey = payment.getPaymentKey();
