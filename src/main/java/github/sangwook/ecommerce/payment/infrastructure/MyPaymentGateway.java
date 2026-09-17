@@ -103,6 +103,7 @@ public class MyPaymentGateway implements PaymentGateway {
         return new PaymentConfirmResult.SUCCESS(Long.valueOf(confirmResponse.orderId), confirmResponse.amount);
     }
 
+    //FIXME 예외처리 구체화
     @Override
     public PaymentLookupResult lookupPayment(String paymentKey) {
         PaymentLookupResponse response = null;
