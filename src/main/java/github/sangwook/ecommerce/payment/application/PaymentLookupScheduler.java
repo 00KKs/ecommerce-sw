@@ -52,9 +52,7 @@ public class PaymentLookupScheduler {
             }
             case PaymentLookupResult.READY() -> {
                 log.info("재확인 결과 아직 미승인. paymentKey={}", paymentKey);
-                if (payment.incrementCheckCount()) {
-                    payment.setNextCheckAt(OffsetDateTime.now().plusSeconds(paymentLookupRetryPolicy.nextDelaySeconds(payment.getCheckCount())));
-                }
+                paymentConfirmResolver.resolve(paymentKey, payment.getOrderId(), payment.getAmount(), payment.getIdempotencyKey(), paymentId);
             }
             case PaymentLookupResult.NOT_FOUND() -> {
                 log.info("재확인 결과 PG에 내역 없음. 수동 확인 필요. paymentKey={}", paymentKey);
