@@ -2,6 +2,8 @@ package github.sangwook.ecommerce.integration.payment;
 
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
 
+import java.net.SocketTimeoutException;
+
 public enum InitiateScenario {
     SUCCESS {
         @Override
@@ -24,7 +26,7 @@ public enum InitiateScenario {
     TIMEOUT {
         @Override
         PaymentInitiateResult apply(Long orderId, Integer amount) {
-            return new PaymentInitiateResult.UNKNOWN(new IllegalStateException("결제 타임아웃 발생"));
+            return new PaymentInitiateResult.UNKNOWN(new SocketTimeoutException());
         }
     };
 
