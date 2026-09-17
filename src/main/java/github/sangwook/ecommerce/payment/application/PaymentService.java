@@ -50,6 +50,13 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
+    @Transactional
+    public void requiresManualReview(Long paymentId) {
+        Payment payment = getById(paymentId);
+        payment.marksAsRequiresReview();
+        paymentRepository.save(payment);
+    }
+
     private Payment getById(Long id) {
         return paymentRepository.findById(id).orElseThrow(() -> new IllegalStateException("결제 내역을 찾을 수 없습니다."));
     }
