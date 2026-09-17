@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.Duration;
 import java.util.UUID;
 
 @Service
@@ -39,8 +39,14 @@ public class PaymentService {
     @Transactional
     public void unknown(Long paymentId) {
         Payment payment = getById(paymentId);
-        OffsetDateTime nextCheckAt = OffsetDateTime.now().plusSeconds(paymentLookupRetryPolicy.nextDelaySeconds(0));
-        payment.markAsUnknown(nextCheckAt);
+        payment.markAsUnknown();
+        if (payment.hasExceededRetryLimit(paymentLookupRetryPolicy.maxRetryCount())) {
+            payment.marksAsRequiresReview();
+        } else {
+            Duration delay = Duration.ofSeconds(paymentLookupRetryPolicy.nextDelaySeconds(payment.getCheckCount() + 1));
+            payment.scheduleNextCheck(delay);
+        }
+
         paymentRepository.save(payment);
     }
 

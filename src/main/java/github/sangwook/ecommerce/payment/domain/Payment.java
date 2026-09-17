@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -62,15 +63,20 @@ public class Payment {
         this.paymentStatus = PaymentStatus.ABORTED;
     }
 
-    public void markAsUnknown(OffsetDateTime nextCheckAt) {
-        this.nextCheckAt = nextCheckAt;
+    public void markAsUnknown() {
         this.paymentStatus = PaymentStatus.UNKNOWN;
     }
 
-    public boolean incrementCheckCount() {
-        if (checkCount >= 4) return false;
-        checkCount++;
-        return true;
+    public boolean hasExceededRetryLimit(int maxRetryCount) {
+        return this.checkCount >= maxRetryCount;
     }
 
+    public void marksAsRequiresReview() {
+        this.paymentStatus = PaymentStatus.MANUAL_REVIEW_REQUIRED;
+    }
+
+    public void scheduleNextCheck(Duration delay) {
+        this.checkCount++;
+        this.nextCheckAt = OffsetDateTime.now().plus(delay);
+    }
 }
