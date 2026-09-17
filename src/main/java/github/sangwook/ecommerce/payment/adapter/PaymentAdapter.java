@@ -56,37 +56,8 @@ class PaymentAdapter implements PaymentPort {
                 return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), retryable);
             }
             case PaymentConfirmResult.UNKNOWN(Throwable cause) -> {
-                //재확인 후 기록
-                switch (paymentGateway.lookupPayment(paymentKey)) {
-                    case PaymentLookupResult.DONE(int doneAmount, OffsetDateTime approvedAt) -> {
-                        if (doneAmount != amount) {
-                            log.error("재확인 결과 금액 불일치. 기대={}, 실제={}, paymentKey={}", amount, doneAmount, paymentKey);
-                            return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false);
-                        }
-                        log.info("재확인 결과 승인 완료 확인, 동기화 진행. paymentKey={}", paymentKey);
-                        paymentService.success(paymentId);
-                        return new PaymentResult.SUCCESS(paymentKey);
-                    }
-                    case PaymentLookupResult.ABORTED() -> {
-                        log.info("재확인 결과 승인 실패 확인. paymentKey={}", paymentKey);
-                        paymentService.aborted(paymentId);
-                        return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false);
-                    }
-                    case PaymentLookupResult.NOT_FOUND() -> {
-                        log.info("재확인 결과 PG에 내역 없음. paymentKey={}", paymentKey);
-                        paymentService.unknown(paymentId);
-                        return new PaymentResult.PAYMENT_UNKNOWN(paymentKey);
-                    }
-                    case PaymentLookupResult.READY() -> {
-                        log.info("재확인 결과 아직 미승인. paymentKey={}", paymentKey);
-                        paymentService.unknown(paymentId);
-                        return new PaymentResult.PAYMENT_UNKNOWN(paymentKey);
-                    }
-                    case PaymentLookupResult.CANCELED(int canceledAmount, OffsetDateTime approvedAt, OffsetDateTime canceledAt) -> {
-                        log.error("예상치 못한 상태(CANCELED) 확인. 수동 확인 필요. paymentKey={}, approvedAt={}, canceledAt={}", paymentKey, approvedAt, canceledAt);
-                        return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false);
-                    }
-                }
+                paymentService.unknown(paymentId);
+                return new PaymentResult.PAYMENT_UNKNOWN(paymentKey);
             }
         }
     }
