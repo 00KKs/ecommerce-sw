@@ -24,7 +24,7 @@ public enum InitiateScenario {
     TIMEOUT {
         @Override
         PaymentInitiateResult apply(Long orderId, Integer amount) {
-            return new PaymentInitiateResult.UNKNOWN(new IllegalStateException("결제 타임아웃 발생"));
+            return new PaymentInitiateResult.UNKNOWN();
         }
     };
 

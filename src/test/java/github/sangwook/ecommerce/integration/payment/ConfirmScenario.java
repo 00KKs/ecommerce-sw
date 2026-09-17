@@ -1,6 +1,5 @@
 package github.sangwook.ecommerce.integration.payment;
 
-import github.sangwook.ecommerce.payment.exception.PaymentConfirmAmbiguousException;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
 
 public enum ConfirmScenario {
@@ -25,7 +24,7 @@ public enum ConfirmScenario {
     TIMEOUT {
         @Override
         PaymentConfirmResult apply(String paymentKey, Long orderId, int amount) {
-            throw new PaymentConfirmAmbiguousException("결제 승인 타임아웃");
+            return new PaymentConfirmResult.UNKNOWN();
         }
     };
 

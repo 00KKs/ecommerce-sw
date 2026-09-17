@@ -14,12 +14,14 @@ public class ProductSnapshots {
 
     @Getter
     public static class ProductSnapshot {
+        private final Long skuId;
         private final String productName;
         private final String optionName;
         private final Integer unitPrice;
         private final Integer quantity;
 
-        public ProductSnapshot(String productName, String optionName, Integer unitPrice, Integer quantity) {
+        public ProductSnapshot(Long skuId, String productName, String optionName, Integer unitPrice, Integer quantity) {
+            this.skuId = skuId;
             this.productName = productName;
             this.optionName = optionName;
             this.unitPrice = unitPrice;

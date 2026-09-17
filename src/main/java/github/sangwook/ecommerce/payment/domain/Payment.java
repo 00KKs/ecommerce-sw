@@ -1,8 +1,12 @@
 package github.sangwook.ecommerce.payment.domain;
 
+import github.sangwook.ecommerce.payment.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -30,6 +34,13 @@ public class Payment {
     @Column(name = "idempotency_key", nullable = false, updatable = false)
     private UUID idempotencyKey;
 
+    @Column(name = "check_count")
+    private int checkCount;
+
+    @Setter
+    @Column(name = "next_check_at")
+    private OffsetDateTime nextCheckAt;
+
     protected Payment() {
     }
 
@@ -39,14 +50,32 @@ public class Payment {
         this.paymentKey = paymentKey;
         this.paymentStatus = PaymentStatus.READY;
         this.idempotencyKey = idempotencyKey;
+        this.checkCount = 0;
+        this.nextCheckAt = null;
     }
 
     public void approve() {
-        if (this.paymentStatus != PaymentStatus.READY) throw new IllegalStateException("이미 처리되었거나 대기 중이 아닌 결제는 승인할 수 없습니다.");
         this.paymentStatus = PaymentStatus.DONE;
     }
 
     public void aborted() {
         this.paymentStatus = PaymentStatus.ABORTED;
+    }
+
+    public void markAsUnknown() {
+        this.paymentStatus = PaymentStatus.UNKNOWN;
+    }
+
+    public boolean hasExceededRetryLimit(int maxRetryCount) {
+        return this.checkCount >= maxRetryCount;
+    }
+
+    public void marksAsRequiresReview() {
+        this.paymentStatus = PaymentStatus.MANUAL_REVIEW_REQUIRED;
+    }
+
+    public void scheduleNextCheck(Duration delay) {
+        this.checkCount++;
+        this.nextCheckAt = OffsetDateTime.now().plus(delay);
     }
 }

@@ -3,6 +3,7 @@ package github.sangwook.ecommerce.integration.payment;
 import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
+import github.sangwook.ecommerce.payment.infrastructure.PaymentLookupResult;
 import java.util.UUID;
 
 public class ComposableFakePaymentGateway implements PaymentGateway {
@@ -23,5 +24,10 @@ public class ComposableFakePaymentGateway implements PaymentGateway {
     @Override
     public PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
         return confirmScenario.apply(paymentKey, orderId, amount);
+    }
+
+    @Override
+    public PaymentLookupResult lookupPayment(String paymentKey) {
+        return null;
     }
 }

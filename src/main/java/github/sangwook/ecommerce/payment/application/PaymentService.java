@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Service
@@ -12,6 +13,7 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final PaymentLookupRetryPolicy paymentLookupRetryPolicy;
 
     @Transactional
     public Long ready(Long orderId, int amount, String paymentKey, UUID idempotencyKey) {
@@ -31,6 +33,27 @@ public class PaymentService {
     public void aborted(Long paymentId) {
         Payment payment = getById(paymentId);
         payment.aborted();
+        paymentRepository.save(payment);
+    }
+
+    @Transactional
+    public void unknown(Long paymentId) {
+        Payment payment = getById(paymentId);
+        payment.markAsUnknown();
+        if (payment.hasExceededRetryLimit(paymentLookupRetryPolicy.maxRetryCount())) {
+            payment.marksAsRequiresReview();
+        } else {
+            Duration delay = Duration.ofSeconds(paymentLookupRetryPolicy.nextDelaySeconds(payment.getCheckCount() + 1));
+            payment.scheduleNextCheck(delay);
+        }
+
+        paymentRepository.save(payment);
+    }
+
+    @Transactional
+    public void requiresManualReview(Long paymentId) {
+        Payment payment = getById(paymentId);
+        payment.marksAsRequiresReview();
         paymentRepository.save(payment);
     }
 
