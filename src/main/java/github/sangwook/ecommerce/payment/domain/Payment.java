@@ -55,7 +55,6 @@ public class Payment {
     }
 
     public void approve() {
-        if (this.paymentStatus != PaymentStatus.READY) throw new IllegalStateException("이미 처리되었거나 대기 중이 아닌 결제는 승인할 수 없습니다.");
         this.paymentStatus = PaymentStatus.DONE;
     }
 
