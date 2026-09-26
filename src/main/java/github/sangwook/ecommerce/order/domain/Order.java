@@ -36,7 +36,7 @@ public class Order {
     private ShippingAddress shippingAddress;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", nullable = false, updatable = false)
     private List<OrderItem> orderItems = new ArrayList<>();
 
     protected Order() {
