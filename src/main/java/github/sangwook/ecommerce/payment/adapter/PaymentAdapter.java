@@ -5,6 +5,8 @@ import github.sangwook.ecommerce.order.port.dto.PaymentResult;
 import github.sangwook.ecommerce.payment.application.PaymentConfirmResolver;
 import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import github.sangwook.ecommerce.payment.application.PaymentService;
+import github.sangwook.ecommerce.payment.exception.InvalidPaymentStateException;
+import github.sangwook.ecommerce.payment.exception.PaymentMismatchException;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +42,22 @@ class PaymentAdapter implements PaymentPort {
             }
         }
 
-        paymentService.updatePaymentKey(paymentId, paymentKey);
+        String paymentKey = initiated.paymentKey();
+        try {
+            paymentService.updatePaymentKey(
+                    paymentId,
+                    Long.valueOf(initiated.orderId()),
+                    initiated.amount(),
+                    paymentKey
+            );
+        } catch (PaymentMismatchException e) {
+            log.error("결제 정보 불일치: {}, expected={}, actual={}", e.getField(), e.getExpected(), e.getActual());
+            return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), false);
+        } catch (InvalidPaymentStateException e) {
+            log.warn("paymentKey 할당 실패: Payment가 할당 가능한 상태가 아님. paymentId={}, orderId={}, currentStatus={}, paymentKey={}",
+                    paymentId, orderId, e.getCurrentStatus(), initiated.paymentKey());
+            return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), false);
+        }
 
         return paymentConfirmResolver.resolve(paymentKey, orderId, amount, paymentIdempotencyKey, paymentId);
     }
