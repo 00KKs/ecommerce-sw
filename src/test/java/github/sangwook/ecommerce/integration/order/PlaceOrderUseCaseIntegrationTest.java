@@ -96,7 +96,7 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
         @Test
         @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
         @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-        @DisplayName("PG사 결제 요청 실패 시 Payment를 저장하지 않는다.")
+        @DisplayName("PG사 결제 요청 실패 시에도 Payment는 저장된다.")
         void doesNotSavePayment() {
             Long memberId = 1L;
             Long addressId = 1L;
@@ -110,7 +110,7 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
                     "SELECT COUNT(*) FROM payment WHERE order_id = ?",
                     Integer.class,
                     response.orderId());
-            assertThat(paymentCount).isEqualTo(0);
+            assertThat(paymentCount).isEqualTo(1);
         }
     }
 
