@@ -24,14 +24,14 @@ public class Payment {
     @Column(name = "amount", nullable = false)
     private Integer amount;
 
-    @Column(name = "payment_key", nullable = false)
+    @Column(name = "payment_key")
     private String paymentKey;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false)
     private PaymentStatus paymentStatus;
 
-    @Column(name = "idempotency_key", nullable = false, updatable = false)
+    @Column(name = "idempotency_key")
     private UUID idempotencyKey;
 
     @Column(name = "check_count")
@@ -44,12 +44,12 @@ public class Payment {
     protected Payment() {
     }
 
-    public Payment(Long orderId, int amount, String paymentKey, UUID idempotencyKey) {
+    public Payment(Long orderId, int amount) {
         this.orderId = orderId;
         this.amount = amount;
-        this.paymentKey = paymentKey;
+        this.paymentKey = null;
         this.paymentStatus = PaymentStatus.READY;
-        this.idempotencyKey = idempotencyKey;
+        this.idempotencyKey = null;
         this.checkCount = 0;
         this.nextCheckAt = null;
     }
