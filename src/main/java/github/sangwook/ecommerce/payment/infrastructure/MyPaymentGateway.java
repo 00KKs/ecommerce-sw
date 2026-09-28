@@ -38,6 +38,15 @@ public class MyPaymentGateway implements PaymentGateway {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * [흐름 대체] 결제창 인증 단계(원래는 클라이언트가 SDK로 수행)를 서버가 대신 수행한다.
+     *
+     * 실제 흐름: 클라이언트가 SDK로 결제창 인증 → paymentKey 수령 → 서버에 승인 요청 (클라이언트 → 서버)
+     * 현재 구조: 클라이언트가 없으므로 서버가 Fake PG의 인증 API를 직접 호출해 paymentKey를 받는다. (서버 → PG)
+     *
+     * 실제 PG 연동 시 이 메서드는 제거되며, paymentKey는 승인 요청의 입력값으로 들어온다.
+     * 이때 클라이언트 입력(orderId, amount)을 DB 기준으로 검증하는 로직이 승인 직전에 반드시 필요하다.
+     */
     @Override
     public PaymentInitiateResult initiatePayment(Long orderId, Integer amount) {
         PaymentInitiateResponse initiateResponse = null;
