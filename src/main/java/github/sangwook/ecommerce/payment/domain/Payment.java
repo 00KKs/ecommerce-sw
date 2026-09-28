@@ -21,7 +21,7 @@ public class Payment {
     @Column(name = "order_id", nullable = false)
     private Long orderId;
 
-    @Column(name = "amount", nullable = false)
+    @Column(name = "amount", nullable = false, updatable = false)
     private Integer amount;
 
     @Column(name = "payment_key")
