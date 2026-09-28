@@ -31,7 +31,7 @@ public class Payment {
     @Column(name = "payment_status", nullable = false)
     private PaymentStatus paymentStatus;
 
-    @Column(name = "idempotency_key")
+    @Column(name = "idempotency_key", updatable = false)
     private UUID idempotencyKey;
 
     @Column(name = "check_count")
@@ -44,12 +44,12 @@ public class Payment {
     protected Payment() {
     }
 
-    public Payment(Long orderId, int amount) {
+    public Payment(Long orderId, int amount, UUID idempotencyKey) {
         this.orderId = orderId;
         this.amount = amount;
         this.paymentKey = null;
         this.paymentStatus = PaymentStatus.READY;
-        this.idempotencyKey = null;
+        this.idempotencyKey = idempotencyKey;
         this.checkCount = 0;
         this.nextCheckAt = null;
     }
@@ -77,5 +77,9 @@ public class Payment {
     public void scheduleNextCheck(Duration delay) {
         this.checkCount++;
         this.nextCheckAt = OffsetDateTime.now().plus(delay);
+    }
+
+    public void updatePaymentKey(String paymentKey) {
+        this.paymentKey = paymentKey;
     }
 }

@@ -16,8 +16,8 @@ public class PaymentService {
     private final PaymentLookupRetryPolicy paymentLookupRetryPolicy;
 
     @Transactional
-    public Long ready(Long orderId, int amount) {
-        Payment payment = new Payment(orderId, amount);
+    public Long ready(Long orderId, int amount, UUID idempotencyKey) {
+        Payment payment = new Payment(orderId, amount, idempotencyKey);
         payment = paymentRepository.save(payment);
         return payment.getId();
     }
@@ -54,6 +54,13 @@ public class PaymentService {
     public void requiresManualReview(Long paymentId) {
         Payment payment = getById(paymentId);
         payment.marksAsRequiresReview();
+        paymentRepository.save(payment);
+    }
+
+    @Transactional
+    public void updatePaymentKey(Long paymentId, String paymentKey) {
+        Payment payment = getById(paymentId);
+        payment.updatePaymentKey(paymentKey);
         paymentRepository.save(payment);
     }
 

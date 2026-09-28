@@ -25,7 +25,8 @@ class PaymentAdapter implements PaymentPort {
     //이 요청 자체도 중복되어 들어올 수 있으므로 주문하기에서도 멱등성 보장이 필요하다
     @Override
     public PaymentResult processPayment(Long orderId, int amount) {
-        Long paymentId = paymentService.ready(orderId, amount);
+        UUID paymentIdempotencyKey = UUID.randomUUID();
+        Long paymentId = paymentService.ready(orderId, amount, paymentIdempotencyKey);
 
         String paymentKey;
         switch (paymentGateway.initiatePayment(orderId, amount)) {
@@ -39,7 +40,7 @@ class PaymentAdapter implements PaymentPort {
             }
         }
 
-        UUID paymentIdempotencyKey = UUID.randomUUID();
+        paymentService.updatePaymentKey(paymentId, paymentKey);
 
         return paymentConfirmResolver.resolve(paymentKey, orderId, amount, paymentIdempotencyKey, paymentId);
     }
