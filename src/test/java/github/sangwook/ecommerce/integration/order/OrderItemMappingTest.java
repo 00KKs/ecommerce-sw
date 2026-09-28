@@ -27,7 +27,7 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 @DataJpaTest(
         showSql = false,
         properties = {
-                "spring.jpa.properties.hibernate.session_factory.statement_inspector=github.sangwook.ecommerce.domain.order.SqlCaptor",
+                "spring.jpa.properties.hibernate.session_factory.statement_inspector=github.sangwook.ecommerce.integration.order.SqlCaptor",
                 "spring.jpa.hibernate.ddl-auto=create-drop",
                 "spring.jpa.properties.hibernate.format_sql=true",
                 "logging.level.org.hibernate.SQL=debug",
