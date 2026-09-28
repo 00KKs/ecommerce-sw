@@ -6,7 +6,7 @@ public enum InitiateScenario {
     SUCCESS {
         @Override
         PaymentInitiateResult apply(Long orderId, Integer amount) {
-            return new PaymentInitiateResult.SUCCESS("fake-payment-key-" + orderId);
+            return new PaymentInitiateResult.SUCCESS("fake-payment-key-" + orderId, String.valueOf(orderId), amount);
         }
     },
     ALWAYS_FAIL {
