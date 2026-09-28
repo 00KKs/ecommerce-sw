@@ -4,7 +4,7 @@ import github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode;
 
 public sealed interface PaymentInitiateResult {
 
-    record SUCCESS(String paymentKey) implements PaymentInitiateResult {}
+    record SUCCESS(String paymentKey, String orderId, int amount) implements PaymentInitiateResult {}
     record FAILED(String reasonCode, String reasonMessage, boolean retryable) implements PaymentInitiateResult {
         public FAILED(LocalFailureReasonCode reason, boolean retryable) {
             this(reason.getCode(), reason.getMessage(), retryable);

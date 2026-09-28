@@ -28,9 +28,9 @@ class PaymentAdapter implements PaymentPort {
         UUID paymentIdempotencyKey = UUID.randomUUID();
         Long paymentId = paymentService.ready(orderId, amount, paymentIdempotencyKey);
 
-        String paymentKey;
+        PaymentInitiateResult.SUCCESS initiated;
         switch (paymentGateway.initiatePayment(orderId, amount)) {
-            case PaymentInitiateResult.SUCCESS(String key) -> paymentKey = key;
+            case PaymentInitiateResult.SUCCESS success -> initiated = success;
             case PaymentInitiateResult.FAILED(String reasonCode, String reasonMessage, boolean retryable) -> {
                 //재시도
                 return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), retryable);
