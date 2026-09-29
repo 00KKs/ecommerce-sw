@@ -8,4 +8,5 @@ public sealed interface PaymentLookupResult {
     record CANCELED(int amount, OffsetDateTime approvedAt, OffsetDateTime canceledAt) implements PaymentLookupResult {}
     record ABORTED() implements PaymentLookupResult {}
     record NOT_FOUND() implements PaymentLookupResult {}
+    record UNAVAILABLE(String reason) implements PaymentLookupResult {}
 }
