@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+//FIXME PlaceOrderUseCase의 case문과 reactor의 코드 중복
 public class PaymentOutcomeReactor {
 
     private final OrderPort orderPort;
