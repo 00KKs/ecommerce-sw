@@ -104,7 +104,7 @@ public class MyPaymentGateway implements PaymentGateway {
             //재시도 가능
         } catch (Exception e) {
             log.error("결제 승인 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
-            throw new IllegalStateException("결제 승인 중 오류가 발생했습니다.");
+            return new PaymentConfirmResult.UNKNOWN();
         }
 
         if (confirmResponse == null) {
