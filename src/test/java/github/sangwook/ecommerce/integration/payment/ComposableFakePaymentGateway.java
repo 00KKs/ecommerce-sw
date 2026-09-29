@@ -15,11 +15,14 @@ public class ComposableFakePaymentGateway implements PaymentGateway {
 
     private final InitiateScenario initiateScenario;
     private final ConfirmScenario confirmScenario;
+    private final ConfirmScenario confirmRetryScenario;
     private final LookupScenario lookupScenario;
 
-    public ComposableFakePaymentGateway(InitiateScenario initiateScenario, ConfirmScenario confirmScenario) {
+    public ComposableFakePaymentGateway(InitiateScenario initiateScenario, ConfirmScenario confirmScenario, ConfirmScenario confirmRetryScenario, LookupScenario lookupScenario) {
         this.initiateScenario = initiateScenario;
         this.confirmScenario = confirmScenario;
+        this.confirmRetryScenario = confirmRetryScenario;
+        this.lookupScenario = lookupScenario;
     }
 
     @Override

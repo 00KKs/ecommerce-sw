@@ -13,10 +13,14 @@ public class FakePaymentGatewayConfig {
     @Primary
     public PaymentGateway fakePaymentGateway(
         @Value("${fake.payment.initiate:SUCCESS}") String initiateScenario,
-        @Value("${fake.payment.confirm:SUCCESS}") String confirmScenario) {
+        @Value("${fake.payment.confirm:SUCCESS}") String confirmScenario,
+        @Value("${fake.payment.confirm-retry:SUCCESS}") String confirmRetryScenario,
+        @Value("${fake.payment.lookup:DONE}") String lookupScenario) {
         return new ComposableFakePaymentGateway(
-            InitiateScenario.valueOf(initiateScenario),
-            ConfirmScenario.valueOf(confirmScenario)
+                InitiateScenario.valueOf(initiateScenario),
+                ConfirmScenario.valueOf(confirmScenario),
+                ConfirmScenario.valueOf(confirmRetryScenario),
+                LookupScenario.valueOf(lookupScenario)
         );
     }
 }
