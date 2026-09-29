@@ -8,6 +8,7 @@ import org.apache.hc.core5.http.ConnectionRequestTimeoutException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
@@ -114,24 +115,30 @@ public class MyPaymentGateway implements PaymentGateway {
         return new PaymentConfirmResult.SUCCESS(Long.valueOf(confirmResponse.orderId), confirmResponse.amount);
     }
 
-    //FIXME 예외처리 구체화
     @Override
     public PaymentLookupResult lookupPayment(String paymentKey) {
         PaymentLookupResponse response = null;
         try {
             response = restClient
-                .get()
-                .uri("/v1/payments/{paymentKey}", paymentKey)
-                .retrieve()
-                .body(PaymentLookupResponse.class);
+                    .get()
+                    .uri("/v1/payments/{paymentKey}", paymentKey)
+                    .retrieve()
+                    .body(PaymentLookupResponse.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("PG에 결제 내역 없음. paymentKey={}", paymentKey);
+            return new PaymentLookupResult.NOT_FOUND();
         } catch (ResourceAccessException e) {
-            log.error("I/O 오류 발생. cause={}", e.getCause(), e);
+            log.error("I/O 오류 발생. paymentKey={}, cause={}", paymentKey, e.getCause(), e);
+            return new PaymentLookupResult.UNAVAILABLE("IO ERROR");
         } catch (Exception e) {
             log.error("결제 조회 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
-            throw new IllegalStateException("결제 조회 중 오류가 발생했습니다.");
+            return new PaymentLookupResult.UNAVAILABLE("LOOKUP FAILED");
         }
 
-        if (response == null) return new PaymentLookupResult.NOT_FOUND();
+        if (response == null || response.status() == null) {
+            log.error("결제 조회 응답 비어있음. paymentKey={}", paymentKey);
+            return new PaymentLookupResult.UNAVAILABLE("EMPTY BODY");
+        }
         return PaymentLookupResponseMapper.toResult(response);
     }
 
