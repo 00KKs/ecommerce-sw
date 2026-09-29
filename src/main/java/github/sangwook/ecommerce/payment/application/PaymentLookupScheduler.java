@@ -41,6 +41,7 @@ public class PaymentLookupScheduler {
                 Integer amount = payment.getAmount();
                 if (doneAmount != amount) {
                     log.error("재확인 결과 금액 불일치. 기대={}, 실제={}, paymentKey={}", amount, doneAmount, paymentKey);
+                    paymentService.requiresManualReview(paymentId);
                     return;
                 }
                 log.info("재확인 결과 승인 완료 확인, 동기화 진행. paymentKey={}", paymentKey);
