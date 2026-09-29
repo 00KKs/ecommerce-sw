@@ -4,12 +4,18 @@ import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentLookupResult;
+
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ComposableFakePaymentGateway implements PaymentGateway {
 
+    private final Map<String, FakePgPayment> storedPayments = new ConcurrentHashMap<>();
+
     private final InitiateScenario initiateScenario;
     private final ConfirmScenario confirmScenario;
+    private final LookupScenario lookupScenario;
 
     public ComposableFakePaymentGateway(InitiateScenario initiateScenario, ConfirmScenario confirmScenario) {
         this.initiateScenario = initiateScenario;
@@ -18,16 +24,34 @@ public class ComposableFakePaymentGateway implements PaymentGateway {
 
     @Override
     public PaymentInitiateResult initiatePayment(Long orderId, Integer amount) {
-        return initiateScenario.apply(orderId, amount);
+        PaymentInitiateResult result = initiateScenario.apply(orderId, amount);
+        if (result instanceof PaymentInitiateResult.SUCCESS success) {
+            storedPayments.put(success.paymentKey(), new FakePgPayment(success.paymentKey(), orderId, amount));
+        }
+        return result;
     }
 
     @Override
     public PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
-        return confirmScenario.apply(paymentKey, orderId, amount);
+        int attempt = storedPayments.get(paymentKey).recordConfirm(idempotencyKey);
+        ConfirmScenario scenario = attempt == 1 ? confirmScenario : confirmRetryScenario;
+        return scenario.apply(paymentKey, orderId, amount);
     }
 
     @Override
     public PaymentLookupResult lookupPayment(String paymentKey) {
-        return null;
+        FakePgPayment stored = storedPayments.get(paymentKey);
+        if (stored == null) {
+            return new PaymentLookupResult.NOT_FOUND();
+        }
+        return lookupScenario.respond(stored);
+    }
+
+    public FakePgPayment storedPayment(String paymentKey) {
+        FakePgPayment stored = storedPayments.get(paymentKey);
+        if (stored == null) {
+            throw new IllegalStateException("initiate되지 않은 paymentKey: " + paymentKey);
+        }
+        return stored;
     }
 }
