@@ -65,7 +65,7 @@ public class PaymentLookupScheduler {
             case PaymentLookupResult.NOT_FOUND() -> {
                 log.info("재확인 결과 PG에 내역 없음. 수동 확인 필요. paymentKey={}", paymentKey);
                 paymentService.requiresManualReview(paymentId);
-                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_FAILED(new PAYMENT_CONFIRM(paymentKey), false));
+            }
             case PaymentLookupResult.UNAVAILABLE(String reason) -> {
                 log.warn("재확인 조회 실패, 다음 주기 재시도. paymentKey={}, reason={}", payment, reason);
                 paymentService.unknown(paymentId);
