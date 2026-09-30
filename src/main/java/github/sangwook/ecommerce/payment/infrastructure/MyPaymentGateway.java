@@ -65,7 +65,7 @@ public class MyPaymentGateway implements PaymentGateway {
         } catch (ResourceAccessException e) {
             return handleInitiateResourceAccessException(e);
         } catch (PaymentGatewayClientError e) {
-            return new PaymentInitiateResult.FAILED(e.code, e.message, false);
+            return new PaymentInitiateResult.FAILED(e.code, e.message);
         }
 
         if (initiateResponse == null) throw new IllegalStateException("결제 요청 중 오류가 발생했습니다.");
@@ -147,21 +147,21 @@ public class MyPaymentGateway implements PaymentGateway {
         if (cause instanceof ConnectTimeoutException || cause instanceof ConnectException) {
             //PG 서버 다운, 서킷브레이커 작동
             log.error("PG사 연결 실패. cause={}", cause.getClass().getName(), e);
-            return new PaymentInitiateResult.FAILED(CONNECTION_REFUSED, false);
+            return new PaymentInitiateResult.FAILED(CONNECTION_REFUSED);
         } else if (cause instanceof ConnectionRequestTimeoutException) {
             //우리쪽 풀 고갈
             log.error("커넥션 풀 고갈, 풀 사이즈/트래픽 점검 필요. cause={}", cause.getClass().getName(), e);
-            return new PaymentInitiateResult.FAILED(CONNECTION_POOL_EXHAUSTED, true); //지연이 필요하다를 추가해도 좋을 듯
+            return new PaymentInitiateResult.FAILED(CONNECTION_POOL_EXHAUSTED); //지연이 필요하다를 추가해도 좋을 듯
         } else if (cause instanceof SocketTimeoutException) {
             log.error("응답 지연, 결제 요청 상태 불명, cause={}", cause.getClass().getName(), e);
             return new PaymentInitiateResult.UNKNOWN();
         } else if (cause instanceof SocketException) {
             //닫힌 소켓에 연결을 시도하거나, 상대방이 연결을 갑자기 끊은 경우
             log.error("소켓 예외, 연결이 예기치 않게 종료. cause={}", cause.getClass().getName(), e);
-            return new PaymentInitiateResult.FAILED(CONNECTION_ABORTED, true);
+            return new PaymentInitiateResult.FAILED(CONNECTION_ABORTED);
         } else {
             log.error("미분류 I/O 오류 발생. cause={}", cause.getClass().getName(), e);
-            return new PaymentInitiateResult.FAILED(UNCLASSIFIED_IO_ERROR, false);
+            return new PaymentInitiateResult.FAILED(UNCLASSIFIED_IO_ERROR);
         }
     }
 

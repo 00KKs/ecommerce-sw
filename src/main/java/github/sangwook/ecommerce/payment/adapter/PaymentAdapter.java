@@ -33,9 +33,9 @@ class PaymentAdapter implements PaymentPort {
         PaymentInitiateResult.SUCCESS initiated;
         switch (paymentGateway.initiatePayment(orderId, amount)) {
             case PaymentInitiateResult.SUCCESS success -> initiated = success;
-            case PaymentInitiateResult.FAILED(String reasonCode, String reasonMessage, boolean retryable) -> {
-                //재시도
-                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), retryable);
+            case PaymentInitiateResult.FAILED(String reasonCode, String reasonMessage) -> {
+                //initiate 실패는 재시도 없음 - 실제 흐름 고려한 선택
+                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), false);
             }
             case PaymentInitiateResult.UNKNOWN() -> {
                 return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_INITIATE(), false);
