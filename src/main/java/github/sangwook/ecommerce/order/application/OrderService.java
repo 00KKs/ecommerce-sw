@@ -1,19 +1,24 @@
 package github.sangwook.ecommerce.order.application;
 
-import github.sangwook.ecommerce.order.domain.*;
+import github.sangwook.ecommerce.order.domain.AddressSnapshot;
+import github.sangwook.ecommerce.order.domain.Order;
+import github.sangwook.ecommerce.order.domain.OrderItem;
+import github.sangwook.ecommerce.order.domain.OrderStatus;
+import github.sangwook.ecommerce.order.domain.ProductSnapshots;
 import github.sangwook.ecommerce.order.domain.ProductSnapshots.ProductSnapshot;
+import github.sangwook.ecommerce.order.domain.ShippingAddress;
 import github.sangwook.ecommerce.order.exception.InsufficientStockException;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import github.sangwook.ecommerce.order.port.StockPort;
+import github.sangwook.ecommerce.order.port.dto.PaymentResult;
+import java.util.Map;
+import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.util.Map;
-import java.util.Map.Entry;
 
 @Slf4j
 @Service
@@ -63,6 +68,16 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    @Transactional
+    public Order applyPaymentOutcome(PaymentResult paymentResult, Long orderId) {
+        return switch (paymentResult) {
+            case PaymentResult.SUCCESS success -> confirm(orderId);
+            case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage, boolean retryable) when !retryable -> fail(orderId);
+            case PaymentResult.PAYMENT_FAILED failed -> getByIdWithItems(orderId);
+            case PaymentResult.PAYMENT_UNKNOWN unknown -> getByIdWithItems(orderId);
+        };
+    }
+
     private @NonNull Order create(ProductSnapshots productSnapshots, AddressSnapshot addressSnapshot) {
         Order order = new Order(
             OrderStatus.PAYMENT_PENDING,
@@ -84,5 +99,4 @@ public class OrderService {
     private Order getByIdWithItems(Long id) {
         return orderRepository.findByIdWithItems(id).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다."));
     }
-
 }
