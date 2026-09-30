@@ -7,7 +7,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 import github.sangwook.ecommerce.integration.AbstractIntegrationTest;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
-import github.sangwook.ecommerce.order.application.OrderDisplayStatus;
+import github.sangwook.ecommerce.order.api.dto.OrderDisplayStatus;
 import github.sangwook.ecommerce.order.application.PlaceOrderUseCase;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import java.util.Map;
