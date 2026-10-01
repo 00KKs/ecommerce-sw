@@ -71,10 +71,9 @@ public class OrderService {
     @Transactional
     public Order applyPaymentOutcome(PaymentResult paymentResult, Long orderId) {
         return switch (paymentResult) {
-            case PaymentResult.SUCCESS success -> confirm(orderId);
-            case PaymentResult.PAYMENT_FAILED(PaymentResult.PaymentFailedStage stage, boolean retryable) when !retryable -> fail(orderId);
-            case PaymentResult.PAYMENT_FAILED failed -> getByIdWithItems(orderId);
-            case PaymentResult.PAYMENT_UNKNOWN unknown -> getByIdWithItems(orderId);
+            case PaymentResult.CONFIRMED ignored -> confirm(orderId);
+            case PaymentResult.FAILED ignored -> fail(orderId);
+            case PaymentResult.PENDING ignored -> getByIdWithItems(orderId);
         };
     }
 
