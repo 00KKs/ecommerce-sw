@@ -10,6 +10,7 @@ final class PaymentLookupResponseMapper {
 
     private PaymentLookupResponseMapper() {}
 
+    //FIXME validate이 warn log만 남기고 예외를 던지지 않음
     static PaymentLookupResult toResult(@Nonnull PaymentLookupResponse response) {
         return switch (response.status()) {
             case READY -> {
