@@ -21,14 +21,14 @@ public class PaymentConfirmResolver {
                 if (!paymentOrderId.equals(orderId) || paymentAmount != amount) {
                     log.error("PG 응답 값 불일치. orderId 기대={}, 실제={}, amount 기대={}, 실제={}", orderId, paymentOrderId, amount, paymentAmount);
                     paymentService.aborted(paymentId);
-                    return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false);
+                    return new PaymentResult.PAYMENT_CONFIRM_FAILED(paymentKey, false);
                 }
                 paymentService.success(paymentId);
                 return new PaymentResult.SUCCESS(paymentKey);
             }
             case PaymentConfirmResult.FAILED(String reasonCode, String reasonMessage, boolean retryable) -> {
                 paymentService.aborted(paymentId);
-                return new PaymentResult.PAYMENT_FAILED(new PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), retryable);
+                return new PaymentResult.PAYMENT_CONFIRM_FAILED(paymentKey, retryable);
             }
             case PaymentConfirmResult.UNKNOWN() -> {
                 paymentService.unknown(paymentId);

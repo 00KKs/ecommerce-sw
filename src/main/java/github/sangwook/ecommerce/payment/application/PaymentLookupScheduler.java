@@ -1,16 +1,15 @@
 package github.sangwook.ecommerce.payment.application;
 
 import github.sangwook.ecommerce.payment.PaymentStatus;
-import github.sangwook.ecommerce.payment.application.PaymentResult.PaymentFailedStage;
-import github.sangwook.ecommerce.payment.application.PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM;
 import github.sangwook.ecommerce.payment.domain.Payment;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentLookupResult;
-import java.time.OffsetDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.OffsetDateTime;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -50,12 +49,12 @@ public class PaymentLookupScheduler {
             case PaymentLookupResult.ABORTED() -> {
                 log.info("재확인 결과 승인 실패 확인. paymentKey={}", paymentKey);
                 paymentService.aborted(paymentId);
-                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_FAILED(new PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false));
+                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_CONFIRM_FAILED(paymentKey, false));
             }
             case PaymentLookupResult.CANCELED(int amount, OffsetDateTime approvedAt, OffsetDateTime canceledAt) -> {
                 log.error("예상치 못한 상태(CANCELED) 확인. 수동 확인 필요. paymentKey={}, approvedAt={}, canceledAt={}", paymentKey, approvedAt, canceledAt);
                 paymentService.requiresManualReview(paymentId);
-                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_FAILED(new PAYMENT_CONFIRM(paymentKey), false));
+                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_CONFIRM_FAILED(paymentKey, false));
             }
             case PaymentLookupResult.READY() -> {
                 log.info("재확인 결과 아직 미승인. paymentKey={}", paymentKey);
