@@ -3,23 +3,15 @@ package github.sangwook.ecommerce.order.port.dto;
 import jakarta.annotation.Nullable;
 
 public sealed interface PaymentResult {
-    record PAYMENT_FAILED(PaymentFailedStage stage, boolean retryable) implements PaymentResult {}
-    record SUCCESS(String paymentKey) implements PaymentResult {}
-    record PAYMENT_UNKNOWN(String paymentKey) implements PaymentResult {}
-
-    sealed interface PaymentFailedStage {
-        record PAYMENT_INITIATE() implements PaymentFailedStage {}
-        record PAYMENT_CONFIRM(String paymentKey) implements  PaymentFailedStage {}
-    }
+    record CONFIRMED(String paymentKey) implements PaymentResult {}
+    record FAILED() implements PaymentResult {}
+    record PENDING(@Nullable String paymentKey) implements PaymentResult {}
 
     default @Nullable String paymentKey() {
         return switch (this) {
-            case SUCCESS(String paymentKey) -> paymentKey;
-            case PAYMENT_UNKNOWN(String paymentKey) -> paymentKey;
-            case PAYMENT_FAILED(PaymentFailedStage stage, boolean retryable) -> switch (stage) {
-                case PaymentFailedStage.PAYMENT_INITIATE initiate -> null;
-                case PaymentFailedStage.PAYMENT_CONFIRM(String paymentKey) -> paymentKey;
-            };
+            case CONFIRMED(String paymentKey) -> paymentKey;
+            case FAILED() -> null;
+            case PENDING(String paymentKey) -> paymentKey;
         };
     }
 }
