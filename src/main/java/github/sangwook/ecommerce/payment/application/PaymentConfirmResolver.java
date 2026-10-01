@@ -1,6 +1,5 @@
 package github.sangwook.ecommerce.payment.application;
 
-import github.sangwook.ecommerce.order.port.dto.PaymentResult;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentConfirmResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

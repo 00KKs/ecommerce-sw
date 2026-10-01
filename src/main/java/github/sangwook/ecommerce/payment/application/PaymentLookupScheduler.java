@@ -1,9 +1,8 @@
 package github.sangwook.ecommerce.payment.application;
 
-import github.sangwook.ecommerce.order.port.dto.PaymentResult;
-import github.sangwook.ecommerce.order.port.dto.PaymentResult.PaymentFailedStage;
-import github.sangwook.ecommerce.order.port.dto.PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM;
 import github.sangwook.ecommerce.payment.PaymentStatus;
+import github.sangwook.ecommerce.payment.application.PaymentResult.PaymentFailedStage;
+import github.sangwook.ecommerce.payment.application.PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM;
 import github.sangwook.ecommerce.payment.domain.Payment;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentLookupResult;
 import java.time.OffsetDateTime;
