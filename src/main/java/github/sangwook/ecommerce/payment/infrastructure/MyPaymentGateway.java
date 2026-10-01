@@ -68,7 +68,10 @@ public class MyPaymentGateway implements PaymentGateway {
             return new PaymentInitiateResult.FAILED(e.code, e.message);
         }
 
-        if (initiateResponse == null) throw new IllegalStateException("결제 요청 중 오류가 발생했습니다.");
+        if (initiateResponse == null) {
+            log.error("initiate 응답 비어있음. orderId={}", orderId);
+            return new PaymentInitiateResult.UNKNOWN();
+        }
         if (!PaymentGatewayPaymentStatus.READY.name().equals(initiateResponse.status)) {
             log.warn("initiate 응답 status 비정상. orderId={}, status={}", orderId, initiateResponse.status);
             return new PaymentInitiateResult.UNKNOWN();
