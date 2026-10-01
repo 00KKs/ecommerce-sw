@@ -66,7 +66,7 @@ public class PaymentLookupScheduler {
                 paymentService.requiresManualReview(paymentId);
             }
             case PaymentLookupResult.UNAVAILABLE(String reason) -> {
-                log.warn("재확인 조회 실패, 다음 주기 재시도. paymentKey={}, reason={}", payment, reason);
+                log.warn("재확인 조회 실패, 다음 주기 재시도. paymentKey={}, reason={}", paymentKey, reason);
                 paymentService.unknown(paymentId);
             }
         }
