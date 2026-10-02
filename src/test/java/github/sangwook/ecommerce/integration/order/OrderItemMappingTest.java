@@ -7,7 +7,7 @@ import java.util.List;
 import github.sangwook.ecommerce.integration.AbstractIntegrationTest;
 import github.sangwook.ecommerce.order.domain.Order;
 import github.sangwook.ecommerce.order.domain.OrderStatus;
-import github.sangwook.ecommerce.order.domain.ShippingAddress;
+import github.sangwook.ecommerce.order.port.dto.ShippingAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -3,7 +3,7 @@ package github.sangwook.ecommerce.order.api.mapper;
 import github.sangwook.ecommerce.order.api.dto.OrderDisplayStatus;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse.AddressResponse;
-import github.sangwook.ecommerce.order.domain.AddressSnapshot;
+import github.sangwook.ecommerce.order.port.dto.AddressSnapshot;
 import github.sangwook.ecommerce.order.domain.Order;
 import github.sangwook.ecommerce.order.domain.OrderStatus;
 import jakarta.annotation.Nullable;

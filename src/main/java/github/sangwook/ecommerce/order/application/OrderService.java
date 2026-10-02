@@ -1,12 +1,12 @@
 package github.sangwook.ecommerce.order.application;
 
-import github.sangwook.ecommerce.order.domain.AddressSnapshot;
+import github.sangwook.ecommerce.order.port.dto.AddressSnapshot;
 import github.sangwook.ecommerce.order.domain.Order;
 import github.sangwook.ecommerce.order.domain.OrderItem;
 import github.sangwook.ecommerce.order.domain.OrderStatus;
-import github.sangwook.ecommerce.order.domain.ProductSnapshots;
-import github.sangwook.ecommerce.order.domain.ProductSnapshots.ProductSnapshot;
-import github.sangwook.ecommerce.order.domain.ShippingAddress;
+import github.sangwook.ecommerce.order.port.dto.ProductSnapshots;
+import github.sangwook.ecommerce.order.port.dto.ProductSnapshots.ProductSnapshot;
+import github.sangwook.ecommerce.order.port.dto.ShippingAddress;
 import github.sangwook.ecommerce.order.exception.InsufficientStockException;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import github.sangwook.ecommerce.order.port.StockPort;

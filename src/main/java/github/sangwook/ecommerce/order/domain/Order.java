@@ -1,5 +1,6 @@
 package github.sangwook.ecommerce.order.domain;
 
+import github.sangwook.ecommerce.order.port.dto.ShippingAddress;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;

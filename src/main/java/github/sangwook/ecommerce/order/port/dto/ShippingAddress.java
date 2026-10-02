@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.order.domain;
+package github.sangwook.ecommerce.order.port.dto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

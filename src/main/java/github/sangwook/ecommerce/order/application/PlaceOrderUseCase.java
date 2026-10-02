@@ -2,9 +2,9 @@ package github.sangwook.ecommerce.order.application;
 
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
 import github.sangwook.ecommerce.order.api.mapper.PlaceOrderResponseMapper;
-import github.sangwook.ecommerce.order.domain.AddressSnapshot;
+import github.sangwook.ecommerce.order.port.dto.AddressSnapshot;
 import github.sangwook.ecommerce.order.domain.Order;
-import github.sangwook.ecommerce.order.domain.ProductSnapshots;
+import github.sangwook.ecommerce.order.port.dto.ProductSnapshots;
 import github.sangwook.ecommerce.order.port.AddressPort;
 import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.ProductPort;
