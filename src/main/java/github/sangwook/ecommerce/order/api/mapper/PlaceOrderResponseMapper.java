@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.order.application;
+package github.sangwook.ecommerce.order.api.mapper;
 
 import github.sangwook.ecommerce.order.api.dto.OrderDisplayStatus;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
