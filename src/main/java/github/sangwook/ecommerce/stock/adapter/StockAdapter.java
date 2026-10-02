@@ -1,7 +1,9 @@
 package github.sangwook.ecommerce.stock.adapter;
 
 import github.sangwook.ecommerce.catalog.port.StockInitializer;
+import github.sangwook.ecommerce.order.exception.InsufficientStockException;
 import github.sangwook.ecommerce.order.port.StockPort;
+import github.sangwook.ecommerce.stock.OutOfStockException;
 import github.sangwook.ecommerce.stock.application.StockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -19,7 +21,11 @@ class StockAdapter implements StockInitializer, StockPort {
 
     @Override
     public void deduct(Long skuId, Integer quantity) {
-        stockService.decreaseIfEnough(skuId, quantity);
+        try {
+            stockService.decreaseIfEnough(skuId, quantity);
+        } catch (OutOfStockException e) {
+            throw new InsufficientStockException(skuId, quantity, e.getAvailableQuantity());
+        }
     }
 
     @Override

@@ -2,7 +2,7 @@ package github.sangwook.ecommerce.catalog.adapter;
 
 import github.sangwook.ecommerce.catalog.adapter.dto.ProductInfo;
 import github.sangwook.ecommerce.catalog.application.ProductService;
-import github.sangwook.ecommerce.order.domain.ProductSnapshots;
+import github.sangwook.ecommerce.order.port.dto.ProductSnapshots;
 import github.sangwook.ecommerce.order.port.ProductPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

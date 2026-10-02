@@ -1,17 +1,15 @@
 package github.sangwook.ecommerce.payment.application;
 
-import github.sangwook.ecommerce.order.port.dto.PaymentResult;
-import github.sangwook.ecommerce.order.port.dto.PaymentResult.PaymentFailedStage;
-import github.sangwook.ecommerce.order.port.dto.PaymentResult.PaymentFailedStage.PAYMENT_CONFIRM;
 import github.sangwook.ecommerce.payment.PaymentStatus;
 import github.sangwook.ecommerce.payment.domain.Payment;
 import github.sangwook.ecommerce.payment.infrastructure.PaymentLookupResult;
-import java.time.OffsetDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.OffsetDateTime;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -41,6 +39,7 @@ public class PaymentLookupScheduler {
                 Integer amount = payment.getAmount();
                 if (doneAmount != amount) {
                     log.error("재확인 결과 금액 불일치. 기대={}, 실제={}, paymentKey={}", amount, doneAmount, paymentKey);
+                    paymentService.requiresManualReview(paymentId);
                     return;
                 }
                 log.info("재확인 결과 승인 완료 확인, 동기화 진행. paymentKey={}", paymentKey);
@@ -50,12 +49,12 @@ public class PaymentLookupScheduler {
             case PaymentLookupResult.ABORTED() -> {
                 log.info("재확인 결과 승인 실패 확인. paymentKey={}", paymentKey);
                 paymentService.aborted(paymentId);
-                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_FAILED(new PaymentFailedStage.PAYMENT_CONFIRM(paymentKey), false));
+                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_CONFIRM_FAILED(paymentKey, false));
             }
             case PaymentLookupResult.CANCELED(int amount, OffsetDateTime approvedAt, OffsetDateTime canceledAt) -> {
                 log.error("예상치 못한 상태(CANCELED) 확인. 수동 확인 필요. paymentKey={}, approvedAt={}, canceledAt={}", paymentKey, approvedAt, canceledAt);
                 paymentService.requiresManualReview(paymentId);
-                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_FAILED(new PAYMENT_CONFIRM(paymentKey), false));
+                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_CONFIRM_FAILED(paymentKey, false));
             }
             case PaymentLookupResult.READY() -> {
                 log.info("재확인 결과 아직 미승인. paymentKey={}", paymentKey);
@@ -65,7 +64,10 @@ public class PaymentLookupScheduler {
             case PaymentLookupResult.NOT_FOUND() -> {
                 log.info("재확인 결과 PG에 내역 없음. 수동 확인 필요. paymentKey={}", paymentKey);
                 paymentService.requiresManualReview(paymentId);
-                paymentOutcomeReactor.react(orderId, new PaymentResult.PAYMENT_FAILED(new PAYMENT_CONFIRM(paymentKey), false));
+            }
+            case PaymentLookupResult.UNAVAILABLE(String reason) -> {
+                log.warn("재확인 조회 실패, 다음 주기 재시도. paymentKey={}, reason={}", paymentKey, reason);
+                paymentService.unknown(paymentId);
             }
         }
     }

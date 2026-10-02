@@ -1,6 +1,6 @@
 package github.sangwook.ecommerce.order.port;
 
-import github.sangwook.ecommerce.order.domain.ProductSnapshots;
+import github.sangwook.ecommerce.order.port.dto.ProductSnapshots;
 
 import java.util.Map;
 

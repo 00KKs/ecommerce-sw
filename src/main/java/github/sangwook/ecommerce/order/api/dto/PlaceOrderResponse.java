@@ -1,6 +1,5 @@
 package github.sangwook.ecommerce.order.api.dto;
 
-import github.sangwook.ecommerce.order.application.OrderDisplayStatus;
 import java.util.List;
 
 public record PlaceOrderResponse(

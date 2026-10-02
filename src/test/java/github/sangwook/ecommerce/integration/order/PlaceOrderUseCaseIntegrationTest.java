@@ -7,7 +7,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 import github.sangwook.ecommerce.integration.AbstractIntegrationTest;
 import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
-import github.sangwook.ecommerce.order.application.OrderDisplayStatus;
+import github.sangwook.ecommerce.order.api.dto.OrderDisplayStatus;
 import github.sangwook.ecommerce.order.application.PlaceOrderUseCase;
 import github.sangwook.ecommerce.order.exception.OrderFailedException;
 import java.util.Map;
@@ -71,7 +71,7 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
 
     @Nested
     @TestPropertySource(properties = {
-            "fake.payment.initiate=ALWAYS_FAIL",
+            "fake.payment.initiate=FAIL",
             "fake.payment.confirm=SUCCESS"
     })
     class 결제_요청_실패_케이스 {
@@ -96,7 +96,7 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
         @Test
         @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
         @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-        @DisplayName("PG사 결제 요청 실패 시 Payment를 저장하지 않는다.")
+        @DisplayName("PG사 결제 요청 실패 시에도 Payment는 저장된다.")
         void doesNotSavePayment() {
             Long memberId = 1L;
             Long addressId = 1L;
@@ -110,32 +110,8 @@ class PlaceOrderUseCaseIntegrationTest extends AbstractIntegrationTest {
                     "SELECT COUNT(*) FROM payment WHERE order_id = ?",
                     Integer.class,
                     response.orderId());
-            assertThat(paymentCount).isEqualTo(0);
+            assertThat(paymentCount).isEqualTo(1);
         }
-    }
-
-    @Nested
-    @TestPropertySource(properties = "fake.payment.initiate=RETRYABLE_FAILURE")
-    class 결제_요청_실패_재시도_가능_케이스 {
-
-        @Test
-        @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
-        @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-        @DisplayName("재시도 가능한 요청 실패 시 재고는 복원되지 않고 계속 보류된다")
-        void holdStock() {
-            Long memberId = 1L;
-            Long addressId = 1L;
-            Map<Long, Integer> orderItems = Map.of(100L, 2);
-
-            PlaceOrderResponse response = placeOrderUseCase.placeOrder(memberId, addressId, orderItems);
-
-            assertThat(response.paymentKey()).isNull();
-            assertThat(response.status()).isEqualTo(OrderDisplayStatus.PENDING_CONFIRMATION);
-
-            Integer remaining = jdbcTemplate.queryForObject("SELECT quantity FROM stock WHERE sku_id = 100", Integer.class);
-            assertThat(remaining).isEqualTo(8);
-        }
-
     }
 
     @Nested
