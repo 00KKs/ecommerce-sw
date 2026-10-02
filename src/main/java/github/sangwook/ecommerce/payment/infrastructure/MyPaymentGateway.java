@@ -18,6 +18,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static github.sangwook.ecommerce.payment.exception.LocalFailureReasonCode.*;
@@ -30,6 +31,9 @@ public class MyPaymentGateway implements PaymentGateway {
     private static final String PAYMENT_CONFIRM_PATH = "/v1/payments/confirm";
 
     private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
+
+    //실제 toss payments의 재시도 가능한 에러코드 참고
+    private static final List<String> RETRYABLE_CLIENT_ERROR_CODES = List.of("PROVIDER_ERROR");
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
@@ -89,14 +93,18 @@ public class MyPaymentGateway implements PaymentGateway {
                     .header(IDEMPOTENCY_HEADER, idempotencyKey.toString())
                     .body(new PaymentConfirmRequest(paymentKey, String.valueOf(orderId), amount))
                     .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, ((request, response) -> {
+                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
                         ErrorResponse errorResponse = objectMapper.readValue(response.getBody(), ErrorResponse.class);
+                        if (RETRYABLE_CLIENT_ERROR_CODES.contains(errorResponse.code)) {
+                            log.warn("결제 승인 재시도 가능 예외 발생. paymentKey={}, code={}", paymentKey, errorResponse.code);
+                            //재시도
+                        }
                         throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message);
-                    }))
-                    .onStatus(HttpStatusCode::is5xxServerError, ((request, response) -> {
+                    })
+                    .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
                         String body = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
                         throw new PaymentGatewayServerError(response.getStatusCode(), body);
-                    }))
+                    })
                     .body(PaymentConfirmResponse.class);
         } catch (ResourceAccessException e) { //Spring은 ResourceAccessException로 I/O 에러를 감싼다.
             return handleConfirmResourceAccessException(e);
