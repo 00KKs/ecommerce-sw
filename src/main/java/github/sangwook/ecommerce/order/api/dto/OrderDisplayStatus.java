@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.order.application;
+package github.sangwook.ecommerce.order.api.dto;
 
 public enum OrderDisplayStatus {
     CONFIRMED,

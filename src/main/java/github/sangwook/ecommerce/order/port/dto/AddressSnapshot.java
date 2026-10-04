@@ -1,4 +1,4 @@
-package github.sangwook.ecommerce.order.domain;
+package github.sangwook.ecommerce.order.port.dto;
 
 import lombok.Getter;
 
