@@ -63,7 +63,7 @@ public class MyPaymentGateway implements PaymentGateway {
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, ((request, response) -> {
                         ErrorResponse errorResponse = objectMapper.readValue(response.getBody(), ErrorResponse.class);
-                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message);
+                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message, false);
                     }))
                     .body(PaymentInitiateResponse.class);
         } catch (ResourceAccessException e) {
@@ -95,11 +95,11 @@ public class MyPaymentGateway implements PaymentGateway {
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
                         ErrorResponse errorResponse = objectMapper.readValue(response.getBody(), ErrorResponse.class);
-                        if (RETRYABLE_CLIENT_ERROR_CODES.contains(errorResponse.code)) {
+                        boolean retryable = RETRYABLE_CLIENT_ERROR_CODES.contains(errorResponse.code);
+                        if (retryable) {
                             log.warn("결제 승인 재시도 가능 예외 발생. paymentKey={}, code={}", paymentKey, errorResponse.code);
-                            //재시도
                         }
-                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message);
+                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message, retryable);
                     })
                     .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
                         String body = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
@@ -109,7 +109,7 @@ public class MyPaymentGateway implements PaymentGateway {
         } catch (ResourceAccessException e) { //Spring은 ResourceAccessException로 I/O 에러를 감싼다.
             return handleConfirmResourceAccessException(e);
         } catch (PaymentGatewayClientError e) {
-            return new PaymentConfirmResult.FAILED(e.code, e.message, false);
+            return new PaymentConfirmResult.FAILED(e.code, e.message, e.retryable);
         } catch (PaymentGatewayServerError e) {
             log.error("PG사 서버 오류 발생. status={}, body={}", e.getStatusCode(), e.getBody());
             //재시도 가능
@@ -236,10 +236,12 @@ public class MyPaymentGateway implements PaymentGateway {
     private static class PaymentGatewayClientError extends RuntimeException {
         private final String code;
         private final String message;
+        private final boolean retryable;
 
-        public PaymentGatewayClientError(String code, String message) {
+        public PaymentGatewayClientError(String code, String message, boolean retryable) {
             this.code = code;
             this.message = message;
+            this.retryable = retryable;
         }
     }
 
