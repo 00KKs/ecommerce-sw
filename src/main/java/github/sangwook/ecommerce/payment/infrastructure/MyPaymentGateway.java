@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
 import github.sangwook.ecommerce.payment.application.PaymentGateway;
+import io.github.resilience4j.retry.Retry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.ConnectTimeoutException;
@@ -37,10 +38,16 @@ public class MyPaymentGateway implements PaymentGateway {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final Retry retry;
 
-    public MyPaymentGateway(@Qualifier("PaymentGatewayRestClientBuilder") RestClient.Builder builder, ObjectMapper objectMapper) {
+    public MyPaymentGateway(
+            @Qualifier("PaymentGatewayRestClientBuilder") RestClient.Builder builder,
+            ObjectMapper objectMapper,
+            @Qualifier("paymentConfirmRetry") Retry retry
+    ) {
         this.restClient = builder.build();
         this.objectMapper = objectMapper;
+        this.retry = retry;
     }
 
     /**
@@ -85,6 +92,42 @@ public class MyPaymentGateway implements PaymentGateway {
 
     @Override
     public PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
+        PaymentConfirmResult result = retry.executeSupplier(() -> doConfirm(paymentKey, orderId, amount, idempotencyKey));
+        if (result instanceof PaymentConfirmResult.FAILED(String code, String message, boolean retryable) && retryable) {
+            log.warn("결제 승인 재시도 소진, 실패 처리. paymentKey={}, reasonCode={}, reasonMessage={}", paymentKey, code, message);
+            return new PaymentConfirmResult.FAILED(code, message, false);
+        }
+        return result;
+    }
+
+    @Override
+    public PaymentLookupResult lookupPayment(String paymentKey) {
+        PaymentLookupResponse response = null;
+        try {
+            response = restClient
+                    .get()
+                    .uri("/v1/payments/{paymentKey}", paymentKey)
+                    .retrieve()
+                    .body(PaymentLookupResponse.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("PG에 결제 내역 없음. paymentKey={}", paymentKey);
+            return new PaymentLookupResult.NOT_FOUND();
+        } catch (ResourceAccessException e) {
+            log.error("I/O 오류 발생. paymentKey={}, cause={}", paymentKey, e.getCause(), e);
+            return new PaymentLookupResult.UNAVAILABLE("IO ERROR");
+        } catch (Exception e) {
+            log.error("결제 조회 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
+            return new PaymentLookupResult.UNAVAILABLE("LOOKUP FAILED");
+        }
+
+        if (response == null || response.status() == null) {
+            log.error("결제 조회 응답 비어있음. paymentKey={}", paymentKey);
+            return new PaymentLookupResult.UNAVAILABLE("EMPTY BODY");
+        }
+        return PaymentLookupResponseMapper.toResult(response);
+    }
+
+    private PaymentConfirmResult doConfirm(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
         PaymentConfirmResponse confirmResponse = null;
         try {
             confirmResponse = restClient
@@ -124,33 +167,6 @@ public class MyPaymentGateway implements PaymentGateway {
         }
 
         return new PaymentConfirmResult.SUCCESS(Long.valueOf(confirmResponse.orderId), confirmResponse.amount);
-    }
-
-    @Override
-    public PaymentLookupResult lookupPayment(String paymentKey) {
-        PaymentLookupResponse response = null;
-        try {
-            response = restClient
-                    .get()
-                    .uri("/v1/payments/{paymentKey}", paymentKey)
-                    .retrieve()
-                    .body(PaymentLookupResponse.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            log.warn("PG에 결제 내역 없음. paymentKey={}", paymentKey);
-            return new PaymentLookupResult.NOT_FOUND();
-        } catch (ResourceAccessException e) {
-            log.error("I/O 오류 발생. paymentKey={}, cause={}", paymentKey, e.getCause(), e);
-            return new PaymentLookupResult.UNAVAILABLE("IO ERROR");
-        } catch (Exception e) {
-            log.error("결제 조회 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
-            return new PaymentLookupResult.UNAVAILABLE("LOOKUP FAILED");
-        }
-
-        if (response == null || response.status() == null) {
-            log.error("결제 조회 응답 비어있음. paymentKey={}", paymentKey);
-            return new PaymentLookupResult.UNAVAILABLE("EMPTY BODY");
-        }
-        return PaymentLookupResponseMapper.toResult(response);
     }
 
     private PaymentInitiateResult handleInitiateResourceAccessException(ResourceAccessException e) {
