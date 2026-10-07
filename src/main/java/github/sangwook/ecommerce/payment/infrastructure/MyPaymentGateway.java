@@ -112,7 +112,7 @@ public class MyPaymentGateway implements PaymentGateway {
             return new PaymentConfirmResult.FAILED(e.code, e.message, e.retryable);
         } catch (PaymentGatewayServerError e) {
             log.error("PG사 서버 오류 발생. status={}, body={}", e.getStatusCode(), e.getBody());
-            //재시도 가능
+            return new PaymentConfirmResult.UNKNOWN();
         } catch (Exception e) {
             log.error("결제 승인 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
             return new PaymentConfirmResult.UNKNOWN();
