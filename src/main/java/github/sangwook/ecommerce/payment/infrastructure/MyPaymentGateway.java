@@ -1,6 +1,7 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
 import github.sangwook.ecommerce.payment.application.PaymentGateway;
+import io.github.resilience4j.retry.Retry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.ConnectTimeoutException;
@@ -37,10 +38,16 @@ public class MyPaymentGateway implements PaymentGateway {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final Retry retry;
 
-    public MyPaymentGateway(@Qualifier("PaymentGatewayRestClientBuilder") RestClient.Builder builder, ObjectMapper objectMapper) {
+    public MyPaymentGateway(
+            @Qualifier("PaymentGatewayRestClientBuilder") RestClient.Builder builder,
+            ObjectMapper objectMapper,
+            @Qualifier("paymentConfirmRetry") Retry retry
+    ) {
         this.restClient = builder.build();
         this.objectMapper = objectMapper;
+        this.retry = retry;
     }
 
     /**
@@ -63,7 +70,7 @@ public class MyPaymentGateway implements PaymentGateway {
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, ((request, response) -> {
                         ErrorResponse errorResponse = objectMapper.readValue(response.getBody(), ErrorResponse.class);
-                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message);
+                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message, false);
                     }))
                     .body(PaymentInitiateResponse.class);
         } catch (ResourceAccessException e) {
@@ -85,45 +92,12 @@ public class MyPaymentGateway implements PaymentGateway {
 
     @Override
     public PaymentConfirmResult confirmPayment(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
-        PaymentConfirmResponse confirmResponse = null;
-        try {
-            confirmResponse = restClient
-                    .post()
-                    .uri(PAYMENT_CONFIRM_PATH)
-                    .header(IDEMPOTENCY_HEADER, idempotencyKey.toString())
-                    .body(new PaymentConfirmRequest(paymentKey, String.valueOf(orderId), amount))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                        ErrorResponse errorResponse = objectMapper.readValue(response.getBody(), ErrorResponse.class);
-                        if (RETRYABLE_CLIENT_ERROR_CODES.contains(errorResponse.code)) {
-                            log.warn("결제 승인 재시도 가능 예외 발생. paymentKey={}, code={}", paymentKey, errorResponse.code);
-                            //재시도
-                        }
-                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message);
-                    })
-                    .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
-                        String body = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
-                        throw new PaymentGatewayServerError(response.getStatusCode(), body);
-                    })
-                    .body(PaymentConfirmResponse.class);
-        } catch (ResourceAccessException e) { //Spring은 ResourceAccessException로 I/O 에러를 감싼다.
-            return handleConfirmResourceAccessException(e);
-        } catch (PaymentGatewayClientError e) {
-            return new PaymentConfirmResult.FAILED(e.code, e.message, false);
-        } catch (PaymentGatewayServerError e) {
-            log.error("PG사 서버 오류 발생. status={}, body={}", e.getStatusCode(), e.getBody());
-            //재시도 가능
-        } catch (Exception e) {
-            log.error("결제 승인 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
-            return new PaymentConfirmResult.UNKNOWN();
+        PaymentConfirmResult result = retry.executeSupplier(() -> doConfirm(paymentKey, orderId, amount, idempotencyKey));
+        if (result instanceof PaymentConfirmResult.FAILED(String code, String message, boolean retryable) && retryable) {
+            log.warn("결제 승인 재시도 소진, 실패 처리. paymentKey={}, reasonCode={}, reasonMessage={}", paymentKey, code, message);
+            return new PaymentConfirmResult.FAILED(code, message, false);
         }
-
-        if (confirmResponse == null) {
-            log.error("PG 응답 바디 비어있음. 승인 성공 여부 불명확. paymentKey={}, orderId={}", paymentKey, orderId);
-            return new PaymentConfirmResult.UNKNOWN();
-        }
-
-        return new PaymentConfirmResult.SUCCESS(Long.valueOf(confirmResponse.orderId), confirmResponse.amount);
+        return result;
     }
 
     @Override
@@ -151,6 +125,48 @@ public class MyPaymentGateway implements PaymentGateway {
             return new PaymentLookupResult.UNAVAILABLE("EMPTY BODY");
         }
         return PaymentLookupResponseMapper.toResult(response);
+    }
+
+    private PaymentConfirmResult doConfirm(String paymentKey, Long orderId, int amount, UUID idempotencyKey) {
+        PaymentConfirmResponse confirmResponse = null;
+        try {
+            confirmResponse = restClient
+                    .post()
+                    .uri(PAYMENT_CONFIRM_PATH)
+                    .header(IDEMPOTENCY_HEADER, idempotencyKey.toString())
+                    .body(new PaymentConfirmRequest(paymentKey, String.valueOf(orderId), amount))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                        ErrorResponse errorResponse = objectMapper.readValue(response.getBody(), ErrorResponse.class);
+                        boolean retryable = RETRYABLE_CLIENT_ERROR_CODES.contains(errorResponse.code);
+                        if (retryable) {
+                            log.warn("결제 승인 재시도 가능 예외 발생. paymentKey={}, code={}", paymentKey, errorResponse.code);
+                        }
+                        throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message, retryable);
+                    })
+                    .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                        String body = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                        throw new PaymentGatewayServerError(response.getStatusCode(), body);
+                    })
+                    .body(PaymentConfirmResponse.class);
+        } catch (ResourceAccessException e) { //Spring은 ResourceAccessException로 I/O 에러를 감싼다.
+            return handleConfirmResourceAccessException(e);
+        } catch (PaymentGatewayClientError e) {
+            return new PaymentConfirmResult.FAILED(e.code, e.message, e.retryable);
+        } catch (PaymentGatewayServerError e) {
+            log.error("PG사 서버 오류 발생. status={}, body={}", e.getStatusCode(), e.getBody());
+            return new PaymentConfirmResult.UNKNOWN();
+        } catch (Exception e) {
+            log.error("결제 승인 중 오류 발생. 실제 예외 타입: {}, 메시지: {}", e.getClass().getName(), e.getMessage(), e);
+            return new PaymentConfirmResult.UNKNOWN();
+        }
+
+        if (confirmResponse == null) {
+            log.error("PG 응답 바디 비어있음. 승인 성공 여부 불명확. paymentKey={}, orderId={}", paymentKey, orderId);
+            return new PaymentConfirmResult.UNKNOWN();
+        }
+
+        return new PaymentConfirmResult.SUCCESS(Long.valueOf(confirmResponse.orderId), confirmResponse.amount);
     }
 
     private PaymentInitiateResult handleInitiateResourceAccessException(ResourceAccessException e) {
@@ -236,10 +252,12 @@ public class MyPaymentGateway implements PaymentGateway {
     private static class PaymentGatewayClientError extends RuntimeException {
         private final String code;
         private final String message;
+        private final boolean retryable;
 
-        public PaymentGatewayClientError(String code, String message) {
+        public PaymentGatewayClientError(String code, String message, boolean retryable) {
             this.code = code;
             this.message = message;
+            this.retryable = retryable;
         }
     }
 
