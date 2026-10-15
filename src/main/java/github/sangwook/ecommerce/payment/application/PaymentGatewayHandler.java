@@ -48,6 +48,10 @@ public class PaymentGatewayHandler {
             log.warn("paymentKey 할당 실패: Payment가 할당 가능한 상태가 아님. paymentId={}, orderId={}, currentStatus={}, paymentKey={}",
                 paymentId, payment.getOrderId(), e.getCurrentStatus(), initiated.paymentKey());
             return new PaymentResult.PAYMENT_INITIATE_FAILED();
+        } catch (RuntimeException e) {
+            log.error("paymentKey 할당 실패", e);
+            paymentService.aborted(paymentId);
+            return new PaymentResult.PAYMENT_INITIATE_FAILED();
         }
 
         return paymentConfirmResolver.resolve(paymentKey, payment.getOrderId(), payment.getAmount(), payment.getIdempotencyKey(), paymentId);
