@@ -24,6 +24,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -95,9 +96,7 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
         @DisplayName("paymentKey 저장에 실패하면 승인 요청 전이므로, 주문을 실패 처리하고 재고를 복원하고 결제를 ABORTED로 닫는다")
         void paymentKeySaveFails() {
             doThrow(dbFailure()).when(paymentService).updatePaymentKey(anyLong(), anyLong(), anyInt(), anyString());
-
-            assertThatThrownBy(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS))
-                    .isInstanceOf(DataAccessResourceFailureException.class);
+            assertDoesNotThrow(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS));
 
             Long orderId = singleOrderId();
             assertThat(orderStatus(orderId)).isEqualTo("PAYMENT_FAILED");
