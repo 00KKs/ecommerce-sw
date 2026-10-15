@@ -16,9 +16,21 @@ public class PaymentConfirmResolver {
     private final PaymentService paymentService;
 
     public PaymentResult resolve(String paymentKey, Long orderId, int amount, UUID paymentIdempotencyKey, Long paymentId) {
-        switch (paymentGateway.confirmPayment(paymentKey, orderId, amount, paymentIdempotencyKey)) {
+        PaymentConfirmResult confirmResult = paymentGateway.confirmPayment(paymentKey, orderId, amount, paymentIdempotencyKey);
+        try {
+            return record(confirmResult, paymentKey, orderId, amount, paymentId);
+        } catch (RuntimeException e) {
+            log.error("PG 승인 결과 반영 실패, UNKNOWN으로 전환. paymentId={}, confirmResult={}", paymentId, confirmResult, e);
+            paymentService.unknown(paymentId);
+            return new PaymentResult.PAYMENT_UNKNOWN(paymentKey);
+        }
+    }
+
+    private PaymentResult record(PaymentConfirmResult confirmResult, String paymentKey, Long orderId, int amount, Long paymentId) {
+        switch (confirmResult) {
             case PaymentConfirmResult.SUCCESS(Long paymentOrderId, int paymentAmount) -> {
                 if (!paymentOrderId.equals(orderId) || paymentAmount != amount) {
+                    //성공이라고 왔지만 orderId와 amount가 다르므로 결제 취소 API를 호출해야한다.
                     log.error("PG 응답 값 불일치. orderId 기대={}, 실제={}, amount 기대={}, 실제={}", orderId, paymentOrderId, amount, paymentAmount);
                     paymentService.aborted(paymentId);
                     return new PaymentResult.PAYMENT_CONFIRM_FAILED(paymentKey, false);

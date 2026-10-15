@@ -30,4 +30,9 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     public List<Payment> findAllByStatusAndNextCheckBefore(PaymentStatus status, OffsetDateTime time) {
         return paymentJpaRepository.findAllByPaymentStatusAndNextCheckAtBefore(status, time);
     }
+
+    @Override
+    public Optional<Payment> findByOrderId(Long orderId) {
+        return paymentJpaRepository.findByOrderId(orderId);
+    }
 }

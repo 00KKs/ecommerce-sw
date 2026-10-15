@@ -4,6 +4,7 @@ import github.sangwook.ecommerce.payment.PaymentStatus;
 import github.sangwook.ecommerce.payment.domain.Payment;
 import github.sangwook.ecommerce.payment.exception.InvalidPaymentStateException;
 import github.sangwook.ecommerce.payment.exception.PaymentMismatchException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,7 +81,11 @@ public class PaymentService {
         }
     }
 
-    private Payment getById(Long id) {
+    public Payment getById(Long id) {
         return paymentRepository.findById(id).orElseThrow(() -> new IllegalStateException("결제 내역을 찾을 수 없습니다."));
+    }
+
+    public Optional<Payment> findByOrderId(Long orderId) {
+        return paymentRepository.findByOrderId(orderId);
     }
 }

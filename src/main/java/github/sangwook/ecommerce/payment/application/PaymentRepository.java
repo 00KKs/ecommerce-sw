@@ -13,4 +13,6 @@ public interface PaymentRepository {
     Optional<Payment> findById(Long id);
 
     List<Payment> findAllByStatusAndNextCheckBefore(PaymentStatus status, OffsetDateTime time);
+
+    Optional<Payment> findByOrderId(Long orderId);
 }

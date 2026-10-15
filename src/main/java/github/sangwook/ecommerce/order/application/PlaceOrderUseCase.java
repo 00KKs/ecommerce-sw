@@ -13,6 +13,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -25,17 +26,29 @@ public class PlaceOrderUseCase {
     private final AddressPort addressPort;
     private final ProductPort productPort;
 
+    private final TransactionTemplate transactionTemplate;
+
     public PlaceOrderResponse placeOrder(Long memberId, Long addressId, Map<Long, Integer> skuIdQuantityMap) {
         AddressSnapshot addressSnapshot = addressPort.getAddressSnapshot(memberId, addressId);
         ProductSnapshots productSnapshots = productPort.getProductSnapshots(skuIdQuantityMap);
 
-        Order order = orderService.createOrder(memberId, addressSnapshot, productSnapshots, skuIdQuantityMap);
-        Long orderId = order.getId();
+        PreparedOrder prepared = transactionTemplate.execute(status -> {
+            Order order = orderService.createOrder(memberId, addressSnapshot, productSnapshots, skuIdQuantityMap);
+            Long paymentId = paymentPort.prepare(order.getId(), order.getTotalPrice());
+            return new PreparedOrder(order, paymentId);
+        });
 
-        PaymentResult paymentResult = paymentPort.processPayment(orderId, order.getTotalPrice());
+        PaymentResult paymentResult = paymentPort.processPayment(prepared.paymentId());
 
-        order = orderService.applyPaymentOutcome(paymentResult, orderId);
+        Order order;
+        try {
+            order = orderService.applyPaymentOutcome(paymentResult, prepared.order().getId());
+        } catch (RuntimeException e) {
+            log.error("결제 결과 주문 반영 실패. orderId={}, paymentResult={}", prepared.order().getId(), paymentResult, e);
+            order = prepared.order();
+        }
         return PlaceOrderResponseMapper.buildResponse(order, paymentResult.paymentKey(), addressSnapshot);
     }
 
+    private record PreparedOrder(Order order, Long paymentId) {}
 }
