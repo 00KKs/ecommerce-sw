@@ -72,11 +72,17 @@ public class MyPaymentGateway implements PaymentGateway {
                         ErrorResponse errorResponse = objectMapper.readValue(response.getBody(), ErrorResponse.class);
                         throw new PaymentGatewayClientError(errorResponse.code, errorResponse.message, false);
                     }))
+                    .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                        String body = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                        throw new PaymentGatewayServerError(response.getStatusCode(), body);
+                    })
                     .body(PaymentInitiateResponse.class);
         } catch (ResourceAccessException e) {
             return handleInitiateResourceAccessException(e);
         } catch (PaymentGatewayClientError e) {
             return new PaymentInitiateResult.FAILED(e.code, e.message);
+        } catch (PaymentGatewayServerError e) {
+            return new PaymentInitiateResult.UNKNOWN();
         }
 
         if (initiateResponse == null) {
