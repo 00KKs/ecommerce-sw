@@ -2,6 +2,8 @@ package github.sangwook.ecommerce.integration.order;
 
 import github.sangwook.ecommerce.integration.AbstractIntegrationTest;
 import github.sangwook.ecommerce.integration.payment.ComposableFakePaymentGateway;
+import github.sangwook.ecommerce.order.api.dto.OrderDisplayStatus;
+import github.sangwook.ecommerce.order.api.dto.PlaceOrderResponse;
 import github.sangwook.ecommerce.order.application.OrderService;
 import github.sangwook.ecommerce.order.application.PlaceOrderUseCase;
 import github.sangwook.ecommerce.order.port.PaymentPort;
@@ -19,12 +21,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.IllegalTransactionStateException;
-import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -96,9 +97,9 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
         @DisplayName("paymentKey 저장에 실패하면 승인 요청 전이므로, 주문을 실패 처리하고 재고를 복원하고 결제를 ABORTED로 닫는다")
         void paymentKeySaveFails() {
             doThrow(dbFailure()).when(paymentService).updatePaymentKey(anyLong(), anyLong(), anyInt(), anyString());
-            assertDoesNotThrow(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS));
+            PlaceOrderResponse response = placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS);
 
-            Long orderId = singleOrderId();
+            Long orderId = response.orderId();
             assertThat(orderStatus(orderId)).isEqualTo("PAYMENT_FAILED");
             assertThat(remainingStock()).isEqualTo(INITIAL_STOCK);
             assertThat(paymentStatus(orderId)).isEqualTo("ABORTED");
@@ -114,9 +115,9 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
         void approvedButPaymentSaveFails() {
             doThrow(dbFailure()).when(paymentService).success(anyLong());
 
-            assertDoesNotThrow(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS));
+            PlaceOrderResponse response = placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS);
 
-            Long orderId = singleOrderId();
+            Long orderId = response.orderId();
             assertThat(orderStatus(orderId)).isEqualTo("PAYMENT_PENDING");
             assertThat(remainingStock()).isEqualTo(DEDUCTED_STOCK);
             assertThat(paymentStatus(orderId)).isEqualTo("UNKNOWN");
@@ -129,8 +130,9 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
         @DisplayName("PG 승인 성공 후 결제 상태 저장에 실패해도, 이후 조회 스케줄러가 결제와 주문을 확정한다")
         void approvedButPaymentSaveFails_recoveredByScheduler() {
             doThrow(dbFailure()).doCallRealMethod().when(paymentService).success(anyLong());
-            catchThrowable(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS));
-            Long orderId = singleOrderId();
+            PlaceOrderResponse response = placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS);
+
+            Long orderId = response.orderId();
 
             runSchedulerNow(orderId); // fake lookup 기본값: DONE
 
@@ -146,10 +148,9 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
         void approvedButOrderConfirmFails() {
             doThrow(dbFailure()).when(orderService).applyPaymentOutcome(any(), anyLong());
 
-            assertThatThrownBy(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS))
-                    .isInstanceOf(DataAccessResourceFailureException.class);
+            PlaceOrderResponse response = placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS);
 
-            Long orderId = singleOrderId();
+            Long orderId = response.orderId();
             assertThat(paymentStatus(orderId)).isEqualTo("DONE");
             assertThat(orderStatus(orderId)).isNotEqualTo("PAYMENT_FAILED");
             assertThat(remainingStock()).isEqualTo(DEDUCTED_STOCK);
@@ -158,46 +159,24 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
 
     @Nested
     @TestPropertySource(properties = {
-            "fake.payment.initiate=EXCEPTION"
-    })
-    class 결제_요청_중_예상치_못한_예외_보상 {
-
-        @Test
-        @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
-        @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-        @DisplayName("PG 결제 요청 중 예외가 전파되면 승인 전이므로, 주문을 실패 처리하고 재고를 복원하고 결제를 ABORTED로 닫는다")
-        void initiateThrows() {
-            assertThatThrownBy(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS))
-                    .isInstanceOf(HttpServerErrorException.class);
-
-            Long orderId = singleOrderId();
-            assertThat(orderStatus(orderId)).isEqualTo("PAYMENT_FAILED");
-            assertThat(remainingStock()).isEqualTo(INITIAL_STOCK);
-            assertThat(paymentStatus(orderId)).isEqualTo("ABORTED");
-        }
-    }
-
-    @Nested
-    @TestPropertySource(properties = {
             "fake.payment.initiate=SUCCESS",
             "fake.payment.confirm=ALWAYS_FAIL"
     })
-    class 승인_실패_후_주문_반영_실패_보상 {
+    class 결제_실패_확정_후_주문_반영_실패 {
 
         @Test
         @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
         @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-        @DisplayName("결제 실패가 확정됐는데 주문 실패 반영이 일시적으로 실패하면, 보상으로 주문을 실패 처리하고 재고를 복원한다")
-        void failedPaymentButOrderFailFails() {
-            doThrow(dbFailure()).doCallRealMethod().when(orderService).applyPaymentOutcome(any(), anyLong());
+        @DisplayName("결제는 ABORTED인데 주문 실패 반영에 실패하면 확인 중으로 응답하고, 주문과 재고는 대사 작업 전까지 보류된다")
+        void abortedButOrderFailFails() {
+            doThrow(dbFailure()).when(orderService).applyPaymentOutcome(any(), anyLong());
 
-            assertThatThrownBy(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS))
-                    .isInstanceOf(DataAccessResourceFailureException.class);
+            PlaceOrderResponse response = placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS);
 
-            Long orderId = singleOrderId();
-            assertThat(paymentStatus(orderId)).isEqualTo("ABORTED");
-            assertThat(orderStatus(orderId)).isEqualTo("PAYMENT_FAILED");
-            assertThat(remainingStock()).isEqualTo(INITIAL_STOCK);
+            assertThat(response.status()).isEqualTo(OrderDisplayStatus.PENDING_CONFIRMATION);
+            assertThat(paymentStatus(response.orderId())).isEqualTo("ABORTED");
+            assertThat(orderStatus(response.orderId())).isEqualTo("PAYMENT_PENDING");
+            assertThat(remainingStock()).isEqualTo(DEDUCTED_STOCK);
         }
     }
 
@@ -213,21 +192,12 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
         return (ComposableFakePaymentGateway) paymentGateway;
     }
 
-    // 예외가 던져지면 응답에서 orderId를 얻을 수 없으므로 DB에서 찾는다. (테스트마다 cleanup되어 주문은 1건)
-    private Long singleOrderId() {
-        return jdbcTemplate.queryForObject("SELECT id FROM orders", Long.class);
-    }
-
     private String orderStatus(Long orderId) {
         return jdbcTemplate.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId);
     }
 
     private String paymentStatus(Long orderId) {
         return jdbcTemplate.queryForObject("SELECT payment_status FROM payment WHERE order_id = ?", String.class, orderId);
-    }
-
-    private int paymentCount(Long orderId) {
-        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM payment WHERE order_id = ?", Integer.class, orderId);
     }
 
     private boolean isNextCheckScheduled(Long orderId) {
