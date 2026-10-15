@@ -2,9 +2,12 @@ package github.sangwook.ecommerce.payment.adapter;
 
 import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.order.port.dto.PaymentResult;
+import github.sangwook.ecommerce.order.port.dto.PaymentResult.CONFIRMED;
+import github.sangwook.ecommerce.order.port.dto.PaymentResult.FAILED;
 import github.sangwook.ecommerce.payment.application.PaymentGatewayHandler;
 import github.sangwook.ecommerce.payment.application.PaymentResultTranslator;
 import github.sangwook.ecommerce.payment.application.PaymentService;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,5 +35,15 @@ class PaymentAdapter implements PaymentPort {
     @Override
     public PaymentResult processPayment(Long paymentId) {
         return PaymentResultTranslator.translate(paymentGatewayHandler.processPayment(paymentId));
+    }
+
+    @Override
+    public Optional<PaymentResult> findSettledOutcome(Long orderId) {
+        return paymentService.findByOrderId(orderId).flatMap(payment ->
+            switch (payment.getPaymentStatus()) {
+                case DONE -> Optional.of(new CONFIRMED(payment.getPaymentKey()));
+                case ABORTED -> Optional.of(new FAILED());
+                default -> Optional.empty();
+            });
     }
 }
