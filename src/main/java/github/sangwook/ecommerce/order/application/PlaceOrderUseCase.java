@@ -35,14 +35,20 @@ public class PlaceOrderUseCase {
         PreparedOrder prepared = transactionTemplate.execute(status -> {
             Order order = orderService.createOrder(memberId, addressSnapshot, productSnapshots, skuIdQuantityMap);
             Long paymentId = paymentPort.prepare(order.getId(), order.getTotalPrice());
-            return new PreparedOrder(order.getId(), paymentId);
+            return new PreparedOrder(order, paymentId);
         });
 
         PaymentResult paymentResult = paymentPort.processPayment(prepared.paymentId());
 
-        Order order = orderService.applyPaymentOutcome(paymentResult, prepared.orderId());
+        Order order;
+        try {
+            order = orderService.applyPaymentOutcome(paymentResult, prepared.order().getId());
+        } catch (RuntimeException e) {
+            log.error("결제 결과 주문 반영 실패. orderId={}, paymentResult={}", prepared.order().getId(), paymentResult, e);
+            order = prepared.order();
+        }
         return PlaceOrderResponseMapper.buildResponse(order, paymentResult.paymentKey(), addressSnapshot);
     }
 
-    private record PreparedOrder(Long orderId, Long paymentId) {}
+    private record PreparedOrder(Order order, Long paymentId) {}
 }
