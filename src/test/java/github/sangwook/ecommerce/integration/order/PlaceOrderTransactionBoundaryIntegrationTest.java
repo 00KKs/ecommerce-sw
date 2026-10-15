@@ -4,6 +4,7 @@ import github.sangwook.ecommerce.integration.AbstractIntegrationTest;
 import github.sangwook.ecommerce.integration.payment.ComposableFakePaymentGateway;
 import github.sangwook.ecommerce.order.application.OrderService;
 import github.sangwook.ecommerce.order.application.PlaceOrderUseCase;
+import github.sangwook.ecommerce.order.port.PaymentPort;
 import github.sangwook.ecommerce.payment.application.PaymentGateway;
 import github.sangwook.ecommerce.payment.application.PaymentLookupScheduler;
 import github.sangwook.ecommerce.payment.application.PaymentService;
@@ -17,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.Map;
@@ -48,6 +50,9 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private PaymentPort paymentPort;
+
     @MockitoSpyBean
     private PaymentService paymentService;
 
@@ -55,26 +60,34 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
     private OrderService orderService;
 
     @Nested
-    class 주문_생성_이후_단계_실패_보상 {
+    class 주문_생성_트랜잭션_원자성 {
 
         @Test
         @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
         @Sql(scripts = "/test-data/cleanup.sql", executionPhase = AFTER_TEST_METHOD)
-        @DisplayName("결제 기록 저장에 실패하면 PG를 호출하지 않고, 주문을 실패 처리하고 재고를 복원한다")
-        void paymentReadyFails() {
+        @DisplayName("결제 기록 저장에 실패하면 트랜잭션 전체가 롤백되어 주문·주문상품·결제 기록이 남지 않고 재고도 차감되지 않는다")
+        void paymentReadyFails_rollsBackAll() {
             doThrow(dbFailure()).when(paymentService).ready(anyLong(), anyInt(), any());
 
             assertThatThrownBy(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS))
                     .isInstanceOf(DataAccessResourceFailureException.class);
 
-            Long orderId = singleOrderId();
-            assertThat(orderStatus(orderId)).isEqualTo("PAYMENT_FAILED");
+            assertThat(count("SELECT COUNT(*) FROM orders")).isZero();
+            assertThat(count("SELECT COUNT(*) FROM order_item")).isZero();
+            assertThat(count("SELECT COUNT(*) FROM payment")).isZero();
             assertThat(remainingStock()).isEqualTo(INITIAL_STOCK);
-            assertThat(paymentCount(orderId)).isZero();
-            assertThatThrownBy(() -> fakeGateway().storedPayment(fakePaymentKey(orderId)))
-                    .as("PG initiate가 호출되지 않아야 한다")
-                    .isInstanceOf(IllegalStateException.class);
         }
+
+        @Test
+        @DisplayName("결제 준비는 호출자의 트랜잭션 안에서만 호출할 수 있다")
+        void prepareRequiresTransaction() {
+            assertThatThrownBy(() -> paymentPort.prepare(1L, 10_000))
+                    .isInstanceOf(IllegalTransactionStateException.class);
+        }
+    }
+
+    @Nested
+    class 주문_생성_이후_단계_실패_보상 {
 
         @Test
         @Sql(scripts = "/test-data/place-order-success.sql", executionPhase = BEFORE_TEST_METHOD)
@@ -232,5 +245,9 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
     private void runSchedulerNow(Long orderId) {
         jdbcTemplate.update("UPDATE payment SET next_check_at = now() - interval '1 second' WHERE order_id = ?", orderId);
         paymentLookupScheduler.lookupUnknownPayments();
+    }
+
+    private int count(String sql) {
+        return jdbcTemplate.queryForObject(sql, Integer.class);
     }
 }
