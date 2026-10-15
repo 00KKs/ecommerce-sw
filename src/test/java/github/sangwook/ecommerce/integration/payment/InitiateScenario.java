@@ -1,8 +1,6 @@
 package github.sangwook.ecommerce.integration.payment;
 
 import github.sangwook.ecommerce.payment.infrastructure.PaymentInitiateResult;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.client.HttpServerErrorException;
 
 public enum InitiateScenario {
     SUCCESS {
@@ -21,12 +19,6 @@ public enum InitiateScenario {
         @Override
         PaymentInitiateResult apply(Long orderId, Integer amount) {
             return new PaymentInitiateResult.UNKNOWN();
-        }
-    },
-    EXCEPTION {
-        @Override
-        PaymentInitiateResult apply(Long orderId, Integer amount) {
-            throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     };
 
