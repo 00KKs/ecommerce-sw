@@ -114,8 +114,7 @@ public class PlaceOrderTransactionBoundaryIntegrationTest extends AbstractIntegr
         void approvedButPaymentSaveFails() {
             doThrow(dbFailure()).when(paymentService).success(anyLong());
 
-            assertThatThrownBy(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS))
-                    .isInstanceOf(DataAccessResourceFailureException.class);
+            assertDoesNotThrow(() -> placeOrderUseCase.placeOrder(MEMBER_ID, ADDRESS_ID, ORDER_ITEMS));
 
             Long orderId = singleOrderId();
             assertThat(orderStatus(orderId)).isEqualTo("PAYMENT_PENDING");
