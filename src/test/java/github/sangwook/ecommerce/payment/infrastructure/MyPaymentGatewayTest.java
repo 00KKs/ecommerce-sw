@@ -1,6 +1,6 @@
 package github.sangwook.ecommerce.payment.infrastructure;
 
-import io.github.resilience4j.core.IntervalFunction;
+import github.sangwook.ecommerce.retry.RetryConfig;
 import io.github.resilience4j.retry.Retry;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.mockwebserver.MockResponse;
@@ -389,21 +389,7 @@ public class MyPaymentGatewayTest {
                 .requestFactory(new HttpComponentsClientHttpRequestFactory(httpClient))
                 .baseUrl(baseUrl);
 
-        io.github.resilience4j.retry.RetryConfig config = io.github.resilience4j.retry.RetryConfig.<PaymentConfirmResult>custom()
-                .maxAttempts(3 + 1) //최초 시도도 포함되어 +1
-                .intervalFunction(IntervalFunction.ofExponentialBackoff(
-                        Duration.ofMillis(500),
-                        2.0, // 500 -> 1000 -> 2000
-                        Duration.ofSeconds(2) //maxInterval
-                ))
-                .retryOnResult(result -> result instanceof PaymentConfirmResult.FAILED failed && failed.retryable())
-                .retryOnException(e -> false)
-                .failAfterMaxAttempts(false)
-                .build();
-
-        Retry retry = Retry.of("paymentConfirm", config);
-        retry.getEventPublisher()
-                .onRetry(event -> log.warn("결제 승인 재시도. attempt={}, wait={}ms", event.getNumberOfRetryAttempts(), event.getWaitInterval().toMillis()));
+        Retry retry = new RetryConfig().paymentConfirmRetry();
         return new MyPaymentGateway(builder, objectMapper, retry);
     }
 
