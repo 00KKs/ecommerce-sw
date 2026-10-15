@@ -4,5 +4,7 @@ import github.sangwook.ecommerce.order.port.dto.PaymentResult;
 
 public interface PaymentPort {
 
-    PaymentResult processPayment(Long orderId, int amount);
+    Long prepare(Long orderId, int amount);
+
+    PaymentResult processPayment(Long paymentId);
 }

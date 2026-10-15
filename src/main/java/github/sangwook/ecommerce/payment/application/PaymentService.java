@@ -80,7 +80,7 @@ public class PaymentService {
         }
     }
 
-    private Payment getById(Long id) {
+    public Payment getById(Long id) {
         return paymentRepository.findById(id).orElseThrow(() -> new IllegalStateException("결제 내역을 찾을 수 없습니다."));
     }
 }
