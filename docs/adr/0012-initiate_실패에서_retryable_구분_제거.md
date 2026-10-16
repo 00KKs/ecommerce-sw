@@ -1,7 +1,7 @@
 # ADR-0012: initiate 실패에서 retryable 구분을 제거
 
 ## 상태
-채택
+채택 - 단, confirm의 RETRYABLE_FAILED 독립 케이스 승격은 적용하지 않음 ([ADR-0015](0015-confirm-재시도-가능-실패를-retryable-플래그로-유지.md))
 
 ## 배경 (이걸 왜 고민했고, 어떤 상황이었는가)
 결제 결과는 SUCCESS / FAILED / UNKNOWN처럼 sealed interface + switch로 구분하고 있고(ADR-0008), 실패 중에는 다시 시도하면 성공할 수 있는 "재시도 가능한 실패"가 존재한다. 기존에는 이 재시도 가능 여부를 initiate·confirm 양쪽 모두 `FAILED`의 `boolean retryable` 플래그로 표현했다.
